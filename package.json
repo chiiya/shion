@@ -7,7 +7,8 @@
   "module": "dist/chordbox.es.js",
   "typings": "dist/chordbox.d.ts",
   "files": [
-    "dist", "types"
+    "dist",
+    "types"
   ],
   "author": "Elisha Witte <elishawitte@gmail.com>",
   "repository": {
@@ -28,7 +29,6 @@
     "test:prod": "npm run lint && npm run test -- --no-cache",
     "report-coverage": "cat ./coverage/lcov.info | coveralls",
     "commit": "git-cz",
-    "precommit": "lint-staged",
     "travis-deploy-once": "travis-deploy-once"
   },
   "lint-staged": {
@@ -123,5 +123,10 @@
     "imagemin-webp": "^5.0.0",
     "ora": "^3.2.0",
     "signale": "^1.4.0"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
   }
 }
