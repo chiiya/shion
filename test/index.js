@@ -1,4 +1,4 @@
-const Chordbox = require('../dist/lib/chordbox').default;
+const Chordbox = require('../dist/chordbox');
 
 const chordbox = new Chordbox;
 chordbox.images('images', 'public');

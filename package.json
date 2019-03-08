@@ -1,36 +1,33 @@
 {
   "name": "chordbox",
   "version": "0.0.0",
-  "description": "",
+  "description": "Extending the 80% use case of Laravel Mix with additional functionality",
   "keywords": [],
-  "main": "dist/chordbox.umd.js",
-  "module": "dist/chordbox.es5.js",
-  "typings": "dist/types/chordbox.d.ts",
+  "main": "dist/chordbox.js",
+  "module": "dist/chordbox.es.js",
+  "typings": "dist/chordbox.d.ts",
   "files": [
-    "dist"
+    "dist", "types"
   ],
   "author": "Elisha Witte <elishawitte@gmail.com>",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/chiiya/chordbox"
   },
   "license": "MIT",
   "engines": {
     "node": ">=6.0.0"
   },
   "scripts": {
-    "lint": "tslint  --project tsconfig.json -t codeFrame 'src/**/*.ts' 'test/**/*.ts'",
+    "lint": "tslint --project tsconfig.json -t codeFrame 'src/**/*.ts' 'test/**/*.ts'",
     "prebuild": "rimraf dist",
-    "build": "tsc --module commonjs && rollup -c rollup.config.ts && typedoc --out docs --target es6 --theme minimal --mode file src",
+    "build": "rollup -c rollup.config.ts",
     "start": "rollup -c rollup.config.ts -w",
     "test": "jest --coverage",
     "test:watch": "jest --coverage --watch",
     "test:prod": "npm run lint && npm run test -- --no-cache",
-    "deploy-docs": "ts-node tools/gh-pages-publish",
     "report-coverage": "cat ./coverage/lcov.info | coveralls",
     "commit": "git-cz",
-    "semantic-release": "semantic-release",
-    "semantic-release-prepare": "ts-node tools/semantic-release-prepare",
     "precommit": "lint-staged",
     "travis-deploy-once": "travis-deploy-once"
   },
@@ -104,12 +101,7 @@
     "replace-in-file": "^3.4.2",
     "rimraf": "^2.6.2",
     "rollup": "^0.67.0",
-    "rollup-plugin-commonjs": "^9.1.8",
-    "rollup-plugin-json": "^3.1.0",
-    "rollup-plugin-node-resolve": "^3.4.0",
-    "rollup-plugin-sourcemaps": "^0.4.2",
     "rollup-plugin-typescript2": "^0.18.0",
-    "semantic-release": "^15.9.16",
     "shelljs": "^0.8.3",
     "travis-deploy-once": "^5.0.9",
     "ts-jest": "^23.10.2",
@@ -117,7 +109,6 @@
     "tslint": "^5.11.0",
     "tslint-config-prettier": "^1.15.0",
     "tslint-config-standard": "^8.0.1",
-    "typedoc": "^0.12.0",
     "typescript": "^3.0.3"
   },
   "dependencies": {

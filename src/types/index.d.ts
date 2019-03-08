@@ -4,5 +4,5 @@ export type Options = Readonly<{
    *
    * @default false
    */
-  webp?: boolean;
-}>;
+  webp?: boolean
+}>
