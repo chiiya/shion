@@ -1,5 +1,5 @@
 import Logger from './logger'
-import { Options } from '../types/types'
+import { Options, Directory } from '../types/types'
 import { getDirectoriesRecursive, getFileInformation } from './helpers'
 import { basename, dirname, extname, join } from 'path'
 import { Result } from 'imagemin'
@@ -13,7 +13,7 @@ const imageminMozjpeg = require('imagemin-mozjpeg')
 const imageminWebp = require('imagemin-webp')
 const imageminGifsicle = require('imagemin-gifsicle')
 
-export default class Chordbox {
+export default class Postmix {
   protected logger: Logger
 
   constructor() {
@@ -36,7 +36,7 @@ export default class Chordbox {
     const start: number = new Date().getTime()
 
     const configuration = this.getConfiguration(options)
-    let directories: string[] = []
+    let directories: Directory[] = []
     let images: string[] = []
 
     if (Array.isArray(input)) {
@@ -46,7 +46,10 @@ export default class Chordbox {
     }
 
     input.map((dirname: string) => {
-      directories = [...directories, ...getDirectoriesRecursive(dirname)]
+      const subdirs = getDirectoriesRecursive(dirname)
+      for (const dir of subdirs) {
+        directories.push({ basePath: dirname, path: dir })
+      }
     })
 
     for (const directory of directories) {
@@ -70,13 +73,14 @@ export default class Chordbox {
   /**
    * Optimize images from a given input directory, and copy them to a given output directory.
    *
-   * @param {string} directory directory
+   * @param {Directory} directory directory
    * @param {string} output directory
    *
    * @returns array of copied filenames
    */
-  protected async copyImages(directory: string, output: string): Promise<Result[]> {
-    return imagemin([`${directory}/*.{jpg,jpeg,png,svg,gif}`], join(output, directory), {
+  protected async copyImages(directory: Directory, output: string): Promise<Result[]> {
+    const outputDir = directory.path.replace(directory.basePath, '')
+    return imagemin([`${directory.path}/*.{jpg,jpeg,png,svg,gif}`], join(output, outputDir), {
       plugins: [
         imageminMozjpeg({ quality: 90 }),
         imageminPngquant(),
@@ -92,10 +96,11 @@ export default class Chordbox {
    * @param directory
    * @param output
    */
-  protected async createWebpFiles(directory: string, output: string): Promise<string[]> {
+  protected async createWebpFiles(directory: Directory, output: string): Promise<string[]> {
     let renamed: string[] = []
+    const outputDir = directory.path.replace(directory.basePath, '')
     for (const extension of ['jpg', 'png']) {
-      const files = await imagemin([`${directory}/*.${extension}`], join(output, directory), {
+      const files = await imagemin([`${directory.path}/*.${extension}`], join(output, outputDir), {
         plugins: [imageminWebp()]
       })
       const result = await this.renameWebpFiles(files.map((file: Result) => file.path), extension)

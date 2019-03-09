@@ -1,5 +1,5 @@
 {
-  "name": "chordbox",
+  "name": "postmix",
   "version": "0.0.0",
   "description": "Extending the 80% use case of Laravel Mix with additional functionality",
   "keywords": [],
@@ -12,7 +12,7 @@
   "author": "Elisha Witte <elishawitte@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/chiiya/chordbox"
+    "url": "https://github.com/chiiya/postmix"
   },
   "license": "MIT",
   "engines": {

@@ -19,3 +19,8 @@ export type FileInformation = {
   size: string,
   type: string,
 }
+
+export type Directory = {
+  basePath: string,
+  path: string,
+}

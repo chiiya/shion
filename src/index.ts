@@ -1,3 +1,3 @@
-import Chordbox from './chordbox'
+import Postmix from './postmix'
 
-export const chordbox = new Chordbox()
+export const postmix = new Postmix()

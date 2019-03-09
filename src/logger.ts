@@ -6,12 +6,12 @@ const options = {
   disabled: false,
   interactive: false,
   stream: process.stdout,
-  scope: 'craftbase',
+  scope: 'postmix',
   types: {
-    craftbase: {
-      badge: '🔩',
+    postmix: {
+      badge: '📦',
       color: 'cyanBright',
-      label: 'craftbase'
+      label: 'postmix'
     }
   }
 }
@@ -35,12 +35,12 @@ export default class Logger {
   }
 
   /**
-   * Log a console message using the craftbase style defined above.
+   * Log a console message using the postmix style defined above.
    * @param {string} message
    */
   log(message: string) {
     // @ts-ignore
-    this.console.craftbase(message)
+    this.console.postmix(message)
   }
 
   /**

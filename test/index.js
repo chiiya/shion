@@ -1,3 +1,3 @@
-const { chordbox } = require('../dist');
+const { postmix } = require('../dist');
 
-chordbox.images('images', 'public', { webp: true });
+postmix.images('images', 'public/images', { webp: true });
