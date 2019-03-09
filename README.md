@@ -4,7 +4,8 @@
 [![Travis](https://img.shields.io/travis/alexjoverm/typescript-library-starter.svg)](https://travis-ci.org/alexjoverm/typescript-library-starter)
 [![Coveralls](https://img.shields.io/coveralls/alexjoverm/typescript-library-starter.svg)](https://coveralls.io/github/alexjoverm/typescript-library-starter)
 
-**Extending the Laravel Mix 80% use case with additional functionality**. This package was developed
+**Extending the 80% use case of Laravel Mix with additional functionality.**  
+This package was developed
 to complement Mix, and as such won't implement functionality already available in Mix. However, it does not depend on Mix, and can be used independently in any kind of application.
 
 #### Features
