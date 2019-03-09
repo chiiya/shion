@@ -26,4 +26,4 @@ const { postmix } = require('postmix');
 postmix.images('resources/assets/images', 'public/images', { webp: true });
 ```
 
-![][https://i.imgur.com/g85Wlf0.png]
+![](https://i.imgur.com/g85Wlf0.png)
