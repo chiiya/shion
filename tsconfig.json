@@ -9,7 +9,6 @@
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "declarationDir": "dist/types",
     "outDir": "dist/lib",
     "noImplicitAny": true,
     "typeRoots": [
@@ -17,7 +16,7 @@
     ]
   },
   "include": [
-    "src"
+    "src", "types/types.d.ts"
   ],
   "exclude": ["node_modules"]
 }

@@ -1,5 +1,5 @@
-const { Signale } = require('signale');
-import *  as Ora from 'ora';
+const { Signale } = require('signale')
+import * as Ora from 'ora'
 
 // Signale options
 const options = {
@@ -11,36 +11,36 @@ const options = {
     craftbase: {
       badge: '🔩',
       color: 'cyanBright',
-      label: 'craftbase',
-    },
-  },
-};
+      label: 'craftbase'
+    }
+  }
+}
 
 /**
  * Logger class
  * Used for custom console logging.
  */
 export default class Logger {
-  protected console: any;
-  protected spinner: any;
+  protected console: any
+  protected spinner: any
 
   /**
    * Logger constructor
    */
   constructor() {
     // @ts-ignore
-    this.console = new Signale(options);
+    this.console = new Signale(options)
     // @ts-ignore
-    this.spinner = new Ora({ spinner: 'circleHalves' });
+    this.spinner = new Ora({ spinner: 'circleHalves' })
   }
 
   /**
    * Log a console message using the craftbase style defined above.
    * @param {string} message
    */
-  craftbase(message: string) {
+  log(message: string) {
     // @ts-ignore
-    this.console.craftbase(message);
+    this.console.craftbase(message)
   }
 
   /**
@@ -48,9 +48,9 @@ export default class Logger {
    * @param {string} message
    */
   spin(message: string) {
-    this.spinner.text = message;
+    this.spinner.text = message
     if (this.spinner.isSpinning === false) {
-      this.spinner.start();
+      this.spinner.start()
     }
   }
 
@@ -60,7 +60,7 @@ export default class Logger {
    */
   succeed(message: string) {
     if (this.spinner.isSpinning === true) {
-      this.spinner.succeed(message);
+      this.spinner.succeed(message)
     }
   }
 
@@ -70,7 +70,7 @@ export default class Logger {
    */
   fail(message: string) {
     if (this.spinner.isSpinning === true) {
-      this.spinner.fail(message);
+      this.spinner.fail(message)
     }
   }
 
@@ -79,6 +79,13 @@ export default class Logger {
    * @param message
    */
   warn(message: string) {
-    this.console.warn(message);
+    this.console.warn(message)
+  }
+
+  /**
+   * Stop and remove the spinner.
+   */
+  stop() {
+    this.spinner.stop()
   }
 }

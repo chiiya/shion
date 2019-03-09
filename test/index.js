@@ -1,4 +1,3 @@
-const Chordbox = require('../dist/chordbox');
+const { chordbox } = require('../dist');
 
-const chordbox = new Chordbox;
-chordbox.images('images', 'public');
+chordbox.images('images', 'public', { webp: true });

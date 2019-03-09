@@ -1,8 +1,10 @@
 import Logger from './logger'
-import { Options } from './types'
-import { getDirectoriesRecursive } from './helpers'
+import { Options } from '../types/types'
+import { getDirectoriesRecursive, getFileInformation } from './helpers'
 import { basename, dirname, extname, join } from 'path'
 import { Result } from 'imagemin'
+import Table from 'cli-table'
+import chalk from 'chalk'
 const { rename } = require('fs-extra')
 const imagemin = require('imagemin')
 const imageminPngquant = require('imagemin-pngquant')
@@ -29,11 +31,13 @@ export default class Chordbox {
    * @param {boolean} options.webp
    */
   public async images(input: string[] | string, output: string, options?: Options) {
+    this.logger.log('Executing image task.')
+    this.logger.spin('Optimizing images...')
+    const start: number = new Date().getTime()
+
     const configuration = this.getConfiguration(options)
     let directories: string[] = []
     let images: string[] = []
-
-    this.logger.spin('Optimizing images...')
 
     if (Array.isArray(input)) {
       input = [...input]
@@ -46,17 +50,21 @@ export default class Chordbox {
     })
 
     for (const directory of directories) {
-      const files = await this.optimizeImages(directory, output)
+      const files = await this.copyImages(directory, output)
       images = [...images, ...files.map((file: Result) => file.path)]
     }
 
     if (configuration.webp === true) {
       for (const directory of directories) {
-        // await this.createWebpFiles(directory, output);
+        const files = await this.createWebpFiles(directory, output)
+        images = [...images, ...files]
       }
     }
 
-    this.logger.succeed(`${images.length} files copied.`)
+    this.logger.stop()
+    this.printResults(images)
+    const time = new Date().getTime() - start
+    this.logger.log(`Image task completed in ${time}ms. ${images.length} files processed.`)
   }
 
   /**
@@ -67,7 +75,7 @@ export default class Chordbox {
    *
    * @returns array of copied filenames
    */
-  protected async optimizeImages(directory: string, output: string): Promise<Result[]> {
+  protected async copyImages(directory: string, output: string): Promise<Result[]> {
     return imagemin([`${directory}/*.{jpg,jpeg,png,svg,gif}`], join(output, directory), {
       plugins: [
         imageminMozjpeg({ quality: 90 }),
@@ -84,13 +92,16 @@ export default class Chordbox {
    * @param directory
    * @param output
    */
-  protected async createWebpFiles(directory: string, output: string): Promise<void> {
+  protected async createWebpFiles(directory: string, output: string): Promise<string[]> {
+    let renamed: string[] = []
     for (const extension of ['jpg', 'png']) {
-      const files = imagemin([`${directory}/*.${extension}`], join(output, directory), {
-        plugins: [imageminWebp({ lossless: true })]
+      const files = await imagemin([`${directory}/*.${extension}`], join(output, directory), {
+        plugins: [imageminWebp()]
       })
-      await this.renameWebpFiles(files.map((file: Result) => file.path), extension)
+      const result = await this.renameWebpFiles(files.map((file: Result) => file.path), extension)
+      renamed = [...renamed, ...result]
     }
+    return renamed
   }
 
   /**
@@ -100,12 +111,34 @@ export default class Chordbox {
    * @param files
    * @param extension
    */
-  protected async renameWebpFiles(files: string[], extension: string): Promise<void> {
+  protected async renameWebpFiles(files: string[], extension: string): Promise<string[]> {
+    const renamed: string[] = []
     for (const file of files) {
       const name = basename(file, extname(file))
       const dir = dirname(file)
-      await rename(file, `${dir}/${name}${extension}.webp`)
+      const newName = `${dir}/${name}.${extension}.webp`
+      await rename(file, newName)
+      renamed.push(newName)
     }
+    return renamed
+  }
+
+  protected printResults(images: string[]): void {
+    const table = new Table({
+      head: ['Image path', 'Type', 'Size'],
+      style: {
+        head: ['cyan', 'bold']
+      }
+    })
+    for (const image of images) {
+      const info = getFileInformation(image)
+      if (info.type === 'WEBP') {
+        table.push([image, info.type, chalk.bgCyan(info.size)])
+      } else {
+        table.push([image, info.type, chalk.bgGreen(info.size)])
+      }
+    }
+    console.log(table.toString())
   }
 
   /**
@@ -116,6 +149,7 @@ export default class Chordbox {
   protected getConfiguration(options?: Options): Options {
     return Object.assign(
       {
+        optimize: true,
         webp: false
       },
       options
