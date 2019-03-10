@@ -6,7 +6,7 @@
 
 **Easy image optimization for your custom build process.**  
 The goal of this project is to create a simple to use, opinionated API around image-min to optimize
-your image files. It can be called as a node script in your build process. See below for an exampl.
+your image files, that can be called as a node script in your build process. See below for an example.
 
 #### Features
 
