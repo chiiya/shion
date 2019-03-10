@@ -82,7 +82,7 @@ export default class Asebi {
     const outputDir = directory.path.replace(directory.basePath, '')
     return imagemin([`${directory.path}/*.{jpg,jpeg,png,svg,gif}`], join(output, outputDir), {
       plugins: [
-        imageminMozjpeg({ quality: 90 }),
+        imageminMozjpeg({ quality: 80 }),
         imageminPngquant(),
         imageminSvgo({ removeViewBox: true }),
         imageminGifsicle({ optimizationLevel: 3 })
