@@ -1,4 +1,4 @@
-import DummyClass from '../src/postmix'
+import DummyClass from '../src/asebi'
 
 /**
  * Dummy test

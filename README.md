@@ -1,12 +1,12 @@
-# Postmix
+# Asebi
 
 [![styled with prettier](https://img.shields.io/badge/styled_with-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
 [![Travis](https://img.shields.io/travis/alexjoverm/typescript-library-starter.svg)](https://travis-ci.org/alexjoverm/typescript-library-starter)
 [![Coveralls](https://img.shields.io/coveralls/alexjoverm/typescript-library-starter.svg)](https://coveralls.io/github/alexjoverm/typescript-library-starter)
 
-**Extending the 80% use case of Laravel Mix with additional functionality.**  
-This package was developed
-to complement Mix, and as such won't implement functionality already available in Mix. However, it does not depend on Mix, and can be used independently in any kind of application.
+**Easy image optimization for your custom build process.**  
+The goal of this project is to create a simple to use, opinionated API around image-min to optimize
+your image files. It can be called as a node script in your build process. See below for an exampl.
 
 #### Features
 
@@ -16,15 +16,21 @@ to complement Mix, and as such won't implement functionality already available i
 ### Usage
 
 ```bash
-npm install --dev postmix
+npm install --dev asebi
 ```
 
-Then, import and use the library in your mix file:
+Then, import and use the library:
 
 ```javascript
-const { postmix } = require('postmix');
+const { asebi } = require('asebi');
 
-postmix.images('resources/assets/images', 'public/images', { webp: true });
+const config = {
+  webp: true,
+}
+
+(async () => {
+  await asebi.images('src/assets/images', 'public/images', config);
+})();
 ```
 
 ![](https://i.imgur.com/g85Wlf0.png)

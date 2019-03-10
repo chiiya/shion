@@ -1,3 +1,3 @@
-import Postmix from './postmix'
+import Asebi from './asebi'
 
-export const postmix = new Postmix()
+export const asebi = new Asebi()

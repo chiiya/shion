@@ -1,7 +1,7 @@
 {
-  "name": "postmix",
-  "version": "0.0.0",
-  "description": "Extending the 80% use case of Laravel Mix with additional functionality",
+  "name": "asebi",
+  "version": "0.0.1",
+  "description": "Easy image optimization for your custom build process",
   "keywords": [],
   "main": "dist/index.js",
   "module": "dist/index.es.js",
@@ -12,7 +12,7 @@
   "author": "Elisha Witte <elishawitte@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/chiiya/postmix"
+    "url": "https://github.com/chiiya/asebi"
   },
   "license": "MIT",
   "engines": {

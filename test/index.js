@@ -1,3 +1,3 @@
-const { postmix } = require('../dist');
+const { asebi } = require('../dist');
 
-postmix.images('images', 'public/images', { webp: true });
+asebi.images('images', 'public/images', { webp: true });

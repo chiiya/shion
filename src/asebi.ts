@@ -13,7 +13,7 @@ const imageminMozjpeg = require('imagemin-mozjpeg')
 const imageminWebp = require('imagemin-webp')
 const imageminGifsicle = require('imagemin-gifsicle')
 
-export default class Postmix {
+export default class Asebi {
   protected logger: Logger
 
   constructor() {
