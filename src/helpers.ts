@@ -1,4 +1,4 @@
-import { lstatSync, readdirSync } from 'fs'
+import { statSync, readdirSync } from 'fs'
 import { join, extname } from 'path'
 import { FileInformation } from '../types/types'
 
@@ -7,7 +7,26 @@ import { FileInformation } from '../types/types'
  *
  * @param source
  */
-export const isDirectory = (source: string): boolean => lstatSync(source).isDirectory()
+export const isDirectory = (source: string): boolean => statSync(source).isDirectory()
+
+/**
+ * Check whether a given file location is a file.
+ *
+ * @param source
+ */
+export const isFile = (source: string): boolean => statSync(source).isFile()
+
+/**
+ * Check whether a given file is an image.
+ *
+ * @param source
+ */
+const isImage = (source: string): boolean => {
+  const extension = extname(source)
+    .substr(1)
+    .toUpperCase()
+  return ['JPG', 'PNG', 'GIF', 'JPEG', 'SVG'].includes(extension)
+}
 
 /**
  * Get a list of all directories contained within a directory.
@@ -21,17 +40,26 @@ export const getDirectories = (source: string): string[] => {
 }
 
 /**
- * Get a list of all sub-directories within a directory, recursively.
+ * Get a list of all files contained within a directory.
  *
  * @param source
  */
-export const getDirectoriesRecursive = (source: string): string[] => {
-  return [
-    source,
-    ...getDirectories(source)
-      .map(getDirectoriesRecursive)
-      .reduce((a, b) => a.concat(b), [])
-  ]
+export const getFiles = (source: string): string[] => {
+  return readdirSync(source)
+    .map((name: string) => join(source, name))
+    .filter(isFile)
+    .filter(isImage)
+}
+
+/**
+ * Get a list of all files within a directory, recursively.
+ *
+ * @param source
+ */
+export const getFilesRecursive = (source: string): string[] => {
+  const dirs = getDirectories(source)
+  const files = dirs.map(dir => getFilesRecursive(dir)).reduce((a, b) => a.concat(b), [])
+  return files.concat(getFiles(source))
 }
 
 /**
@@ -40,7 +68,7 @@ export const getDirectoriesRecursive = (source: string): string[] => {
  * @param path
  */
 export const getFileInformation = (path: string): FileInformation => {
-  const stats = lstatSync(path)
+  const stats = statSync(path)
   return {
     path,
     size: formatSize(stats.size),
@@ -50,7 +78,10 @@ export const getFileInformation = (path: string): FileInformation => {
   }
 }
 
-const formatSize = (bytes: number): string => {
+/**
+ * Format the byte size of a file into a nice human readable format.
+ */
+export const formatSize = (bytes: number): string => {
   if (bytes == 0) {
     return '0 Bytes'
   }

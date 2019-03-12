@@ -6,11 +6,11 @@ const options = {
   disabled: false,
   interactive: false,
   stream: process.stdout,
-  scope: 'asebi',
+  displayTimestamp: true,
   types: {
     asebi: {
-      badge: '📦',
-      color: 'cyanBright',
+      badge: '🌺',
+      color: 'magentaBright',
       label: 'asebi'
     }
   }
@@ -30,6 +30,7 @@ export default class Logger {
   constructor() {
     // @ts-ignore
     this.console = new Signale(options)
+    this.console.config({ displayTimestamp: true })
     // @ts-ignore
     this.spinner = new Ora({ spinner: 'circleHalves' })
   }
@@ -41,6 +42,14 @@ export default class Logger {
   log(message: string) {
     // @ts-ignore
     this.console.asebi(message)
+  }
+
+  /**
+   * Log an error message to the console
+   * @param {string} message
+   */
+  error(message: string) {
+    this.console.error(message)
   }
 
   /**

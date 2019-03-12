@@ -1,11 +1,13 @@
 import Logger from './logger'
-import { Options, Directory } from '../types/types'
-import { getDirectoriesRecursive, getFileInformation } from './helpers'
+import { Options, File, Result } from '../types/types'
+import { getFilesRecursive, getFileInformation, formatSize } from './helpers'
 import { basename, dirname, extname, join } from 'path'
-import { Result } from 'imagemin'
+import { buffer as imageminBuffer } from 'imagemin'
+import { cpus } from 'os'
 import Table from 'cli-table'
 import chalk from 'chalk'
-const { rename } = require('fs-extra')
+const { rename, existsSync, readFile, copyFile, writeFile, ensureDir } = require('fs-extra')
+const { Sema } = require('async-sema')
 const imagemin = require('imagemin')
 const imageminPngquant = require('imagemin-pngquant')
 const imageminSvgo = require('imagemin-svgo')
@@ -36,8 +38,8 @@ export default class Asebi {
     const start: number = new Date().getTime()
 
     const configuration = this.getConfiguration(options)
-    let directories: Directory[] = []
-    let images: string[] = []
+    let files: File[] = []
+    let results: Result[] = []
 
     if (Array.isArray(input)) {
       input = [...input]
@@ -45,42 +47,58 @@ export default class Asebi {
       input = [input]
     }
 
+    // Get a list of all files contained in the input directories
     input.map((dirname: string) => {
-      const subdirs = getDirectoriesRecursive(dirname)
-      for (const dir of subdirs) {
-        directories.push({ basePath: dirname, path: dir })
+      if (existsSync(dirname) === false) {
+        this.logger.stop()
+        this.logger.error(`Directory not found ${dirname}`)
+        process.exit(-1)
+      }
+      const foundFiles = getFilesRecursive(dirname)
+      for (const file of foundFiles) {
+        files.push({ basePath: dirname, path: file })
       }
     })
 
-    for (const directory of directories) {
-      const files = await this.copyImages(directory, output)
-      images = [...images, ...files.map((file: Result) => file.path)]
-    }
+    const s = new Sema(cpus().length, { capacity: files.length })
 
-    if (configuration.webp === true) {
-      for (const directory of directories) {
-        const files = await this.createWebpFiles(directory, output)
-        images = [...images, ...files]
-      }
-    }
+    // Optimize or copy images, depending on configuration
+    await Promise.all(
+      files.map(async (file: File) => {
+        await s.acquire()
+        let result
+        if (configuration.optimize === true) {
+          result = await this.optimizeImage(file, output, configuration)
+        } else {
+          result = await this.copyImage(file, output)
+        }
+
+        results = [...results, ...result]
+        s.release()
+      })
+    )
 
     this.logger.stop()
-    this.printResults(images)
+    this.printResults(results)
     const time = new Date().getTime() - start
-    this.logger.log(`Image task completed in ${time}ms. ${images.length} files processed.`)
+    this.logger.log(`Image task completed in ${time}ms. ${results.length} files processed.`)
   }
 
-  /**
-   * Optimize images from a given input directory, and copy them to a given output directory.
-   *
-   * @param {Directory} directory directory
-   * @param {string} output directory
-   *
-   * @returns array of copied filenames
-   */
-  protected async copyImages(directory: Directory, output: string): Promise<Result[]> {
-    const outputDir = directory.path.replace(directory.basePath, '')
-    return imagemin([`${directory.path}/*.{jpg,jpeg,png,svg,gif}`], join(output, outputDir), {
+  protected async optimizeImage(
+    file: File,
+    output: string,
+    configuration: Options
+  ): Promise<Result[]> {
+    const filename = basename(file.path)
+    const outputDir = join(output, file.path.replace(file.basePath, '').replace(filename, ''))
+    await ensureDir(outputDir)
+    const destination = join(process.cwd(), outputDir, filename)
+    const extension = extname(destination)
+      .substr(1)
+      .toUpperCase()
+    const buffer = await readFile(file.path)
+    const originalSize = buffer.length
+    const optimizedBuffer = await imageminBuffer(buffer, {
       plugins: [
         imageminMozjpeg({ quality: 80 }),
         imageminPngquant(),
@@ -88,59 +106,73 @@ export default class Asebi {
         imageminGifsicle({ optimizationLevel: 3 })
       ]
     })
-  }
-
-  /**
-   * Create webp files from a given input directory, and copy them to a given output directory.
-   *
-   * @param directory
-   * @param output
-   */
-  protected async createWebpFiles(directory: Directory, output: string): Promise<string[]> {
-    let renamed: string[] = []
-    const outputDir = directory.path.replace(directory.basePath, '')
-    for (const extension of ['jpg', 'png']) {
-      const files = await imagemin([`${directory.path}/*.${extension}`], join(output, outputDir), {
+    const newSize = optimizedBuffer.length
+    if (originalSize < newSize) {
+      return await this.copyImage(file, output)
+    }
+    await writeFile(destination, buffer)
+    const results: Result[] = [
+      {
+        path: join(outputDir, filename),
+        originalSize: formatSize(originalSize),
+        newSize: formatSize(newSize),
+        type: extension
+      }
+    ]
+    if (configuration.webp === true && ['JPG', 'JPEG', 'PNG'].includes(extension)) {
+      const webPBuffer = await imageminBuffer(buffer, {
         plugins: [imageminWebp()]
       })
-      const result = await this.renameWebpFiles(files.map((file: Result) => file.path), extension)
-      renamed = [...renamed, ...result]
+      await writeFile(`${destination}.webp`, webPBuffer)
+      results.push({
+        path: join(outputDir, `${filename}.webp`),
+        originalSize: formatSize(originalSize),
+        newSize: formatSize(webPBuffer.length),
+        type: 'WEBP'
+      })
     }
-    return renamed
+    return results
   }
 
-  /**
-   * Rename webp files for better compatibility with nginx:
-   * `cat.webp` -> `cat.jpg.webp`
-   *
-   * @param files
-   * @param extension
-   */
-  protected async renameWebpFiles(files: string[], extension: string): Promise<string[]> {
-    const renamed: string[] = []
-    for (const file of files) {
-      const name = basename(file, extname(file))
-      const dir = dirname(file)
-      const newName = `${dir}/${name}.${extension}.webp`
-      await rename(file, newName)
-      renamed.push(newName)
-    }
-    return renamed
+  protected async copyImage(file: File, output: string): Promise<Result[]> {
+    const filename = basename(file.path)
+    const outputDir = join(output, file.path.replace(file.basePath, '').replace(filename, ''))
+    await ensureDir(outputDir)
+    const destination = join(process.cwd(), outputDir, filename)
+    const information = getFileInformation(file.path)
+    await copyFile(file.path, destination)
+    return [
+      {
+        path: join(outputDir, filename),
+        originalSize: information.size,
+        newSize: information.size,
+        type: information.type
+      }
+    ]
   }
 
-  protected printResults(images: string[]): void {
+  protected printResults(results: Result[]): void {
     const table = new Table({
-      head: ['Image path', 'Type', 'Size'],
+      head: ['Image path', 'Type', 'Original Size', 'New Size'],
       style: {
         head: ['cyan', 'bold']
       }
     })
-    for (const image of images) {
-      const info = getFileInformation(image)
-      if (info.type === 'WEBP') {
-        table.push([image, info.type, chalk.bgCyan(info.size)])
+    for (const image of results) {
+      if (image.type === 'WEBP') {
+        table.push([
+          image.path,
+          image.type,
+          chalk.bgCyan(image.originalSize),
+          chalk.bgCyan(image.newSize)
+        ])
       } else {
-        table.push([image, info.type, chalk.bgGreen(info.size)])
+        table.push([
+          image.path,
+          image.type,
+          chalk.bgGreen(image.originalSize),
+          chalk.bgGreen(image.newSize)
+        ])
       }
     }
     console.log(table.toString())

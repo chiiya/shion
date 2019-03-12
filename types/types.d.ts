@@ -20,7 +20,14 @@ export type FileInformation = {
   type: string,
 }
 
-export type Directory = {
+export type File = {
   basePath: string,
   path: string,
+}
+
+export type Result = {
+  path: string,
+  originalSize: string,
+  newSize: string,
+  type: string,
 }
