@@ -1,4 +1,4 @@
-export type Options = {
+export type OptimizeOptions = {
   /**
    * Set to to `true` to automatically generate webp versions of each image file.
    *
@@ -12,6 +12,10 @@ export type Options = {
    * @default true
    */
   optimize?: boolean,
+  mozJpeg: any
+  pngQuant: any,
+  svgo: any,
+  gifSicle: any,
 }
 
 export type FileInformation = {
@@ -20,9 +24,9 @@ export type FileInformation = {
   type: string,
 }
 
-export type File = {
-  basePath: string,
-  path: string,
+export type Input = {
+  basedir: string,
+  fullPath: string,
 }
 
 export type Result = {
@@ -30,4 +34,11 @@ export type Result = {
   originalSize: string,
   newSize: string,
   type: string,
+}
+
+export type Output = {
+  basedir: string,
+  dir: string,
+  filename: string,
+  fullPath: string,
 }

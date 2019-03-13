@@ -1,19 +1,12 @@
 import Logger from './logger'
-import { Options, File, Result } from '../types/types'
-import { getFilesRecursive, getFileInformation, formatSize } from './helpers'
-import { basename, dirname, extname, join } from 'path'
-import { buffer as imageminBuffer } from 'imagemin'
+import { OptimizeOptions, Input, Result } from '../types/types'
+import { getFilesRecursive } from './helpers'
 import { cpus } from 'os'
 import Table from 'cli-table'
 import chalk from 'chalk'
-const { rename, existsSync, readFile, copyFile, writeFile, ensureDir } = require('fs-extra')
+import Processor from './processor'
+const { ensureDir } = require('fs-extra')
 const { Sema } = require('async-sema')
-const imagemin = require('imagemin')
-const imageminPngquant = require('imagemin-pngquant')
-const imageminSvgo = require('imagemin-svgo')
-const imageminMozjpeg = require('imagemin-mozjpeg')
-const imageminWebp = require('imagemin-webp')
-const imageminGifsicle = require('imagemin-gifsicle')
 
 export default class Asebi {
   protected logger: Logger
@@ -32,13 +25,37 @@ export default class Asebi {
    * @param {object} options
    * @param {boolean} options.webp
    */
-  public async images(input: string[] | string, output: string, options?: Options) {
+  public async images(input: string[] | string, output: string, options?: OptimizeOptions) {
     this.logger.log('Executing image task.')
     this.logger.spin('Optimizing images...')
     const start: number = new Date().getTime()
+    let results: Result[] = []
 
+    try {
+      results = await this.optimizeImages(input, output, options)
+    } catch (error) {
+      this.logger.error(`${error.message}\n${error.stack}`)
+    }
+
+    this.logger.stop()
+    this.printResults(results)
+    const time = new Date().getTime() - start
+    this.logger.log(`Image task completed in ${time}ms. ${results.length} files processed.`)
+  }
+
+  /**
+   * Optimize images.
+   * @param input
+   * @param output
+   * @param options
+   */
+  protected async optimizeImages(
+    input: string[] | string,
+    output: string,
+    options?: OptimizeOptions
+  ): Promise<Result[]> {
     const configuration = this.getConfiguration(options)
-    let files: File[] = []
+    let files: Input[] = []
     let results: Result[] = []
 
     if (Array.isArray(input)) {
@@ -49,14 +66,15 @@ export default class Asebi {
 
     // Get a list of all files contained in the input directories
     input.map((dirname: string) => {
-      if (existsSync(dirname) === false) {
-        this.logger.stop()
-        this.logger.error(`Directory not found ${dirname}`)
-        process.exit(-1)
-      }
-      const foundFiles = getFilesRecursive(dirname)
-      for (const file of foundFiles) {
-        files.push({ basePath: dirname, path: file })
+      try {
+        const foundFiles = getFilesRecursive(dirname)
+        for (const file of foundFiles) {
+          files.push({ basedir: dirname, fullPath: file })
+        }
+      } catch (error) {
+        if (error.code === 'ENOENT') {
+          this.logger.error(`File or directory not found.\n${error.message}`)
+        } else throw error
       }
     })
 
@@ -64,13 +82,15 @@ export default class Asebi {
 
     // Optimize or copy images, depending on configuration
     await Promise.all(
-      files.map(async (file: File) => {
+      files.map(async (file: Input) => {
         await s.acquire()
         let result
+        const outputData = Processor.getOutputData(file, output)
+        await ensureDir(output)
         if (configuration.optimize === true) {
-          result = await this.optimizeImage(file, output, configuration)
+          result = await Processor.optimizeImage(file, outputData, configuration)
         } else {
-          result = await this.copyImage(file, output)
+          result = await Processor.copyImage(file, outputData)
         }
 
         results = [...results, ...result]
@@ -78,79 +98,13 @@ export default class Asebi {
       })
     )
 
-    this.logger.stop()
-    this.printResults(results)
-    const time = new Date().getTime() - start
-    this.logger.log(`Image task completed in ${time}ms. ${results.length} files processed.`)
-  }
-
-  protected async optimizeImage(
-    file: File,
-    output: string,
-    configuration: Options
-  ): Promise<Result[]> {
-    const filename = basename(file.path)
-    const outputDir = join(output, file.path.replace(file.basePath, '').replace(filename, ''))
-    await ensureDir(outputDir)
-    const destination = join(process.cwd(), outputDir, filename)
-    const extension = extname(destination)
-      .substr(1)
-      .toUpperCase()
-    const buffer = await readFile(file.path)
-    const originalSize = buffer.length
-    const optimizedBuffer = await imageminBuffer(buffer, {
-      plugins: [
-        imageminMozjpeg({ quality: 80 }),
-        imageminPngquant(),
-        imageminSvgo({ removeViewBox: true }),
-        imageminGifsicle({ optimizationLevel: 3 })
-      ]
-    })
-    const newSize = optimizedBuffer.length
-    if (originalSize < newSize) {
-      return await this.copyImage(file, output)
-    }
-    await writeFile(destination, buffer)
-    const results: Result[] = [
-      {
-        path: join(outputDir, filename),
-        originalSize: formatSize(originalSize),
-        newSize: formatSize(newSize),
-        type: extension
-      }
-    ]
-    if (configuration.webp === true && ['JPG', 'JPEG', 'PNG'].includes(extension)) {
-      const webPBuffer = await imageminBuffer(buffer, {
-        plugins: [imageminWebp()]
-      })
-      await writeFile(`${destination}.webp`, webPBuffer)
-      results.push({
-        path: join(outputDir, `${filename}.webp`),
-        originalSize: formatSize(originalSize),
-        newSize: formatSize(webPBuffer.length),
-        type: 'WEBP'
-      })
-    }
     return results
   }
 
-  protected async copyImage(file: File, output: string): Promise<Result[]> {
-    const filename = basename(file.path)
-    const outputDir = join(output, file.path.replace(file.basePath, '').replace(filename, ''))
-    await ensureDir(outputDir)
-    const destination = join(process.cwd(), outputDir, filename)
-    const information = getFileInformation(file.path)
-    await copyFile(file.path, destination)
-    return [
-      {
-        path: join(outputDir, filename),
-        originalSize: information.size,
-        newSize: information.size,
-        type: information.type
-      }
-    ]
-  }
-
+  /**
+   * Print the results of the optimization task as a table.
+   * @param results
+   */
   protected printResults(results: Result[]): void {
     const table = new Table({
       head: ['Image path', 'Type', 'Original Size', 'New Size'],
@@ -159,35 +113,35 @@ export default class Asebi {
       }
     })
     for (const image of results) {
-      if (image.type === 'WEBP') {
-        table.push([
-          image.path,
-          image.type,
-          chalk.bgCyan(image.originalSize),
-          chalk.bgCyan(image.newSize)
-        ])
-      } else {
-        table.push([
-          image.path,
-          image.type,
-          chalk.bgGreen(image.originalSize),
-          chalk.bgGreen(image.newSize)
-        ])
-      }
+      table.push([
+        image.path,
+        image.type === 'WEBP' ? chalk.cyan(image.type) : image.type,
+        chalk.magentaBright(image.originalSize),
+        chalk.magentaBright(image.newSize)
+      ])
     }
     console.log(table.toString())
   }
 
   /**
    * Get the resolved configuration options.
-   *
    * @param options
    */
-  protected getConfiguration(options?: Options): Options {
+  protected getConfiguration(options?: OptimizeOptions): OptimizeOptions {
     return Object.assign(
       {
         optimize: true,
-        webp: false
+        webp: false,
+        mozJpeg: {
+          quality: 80
+        },
+        pngQuant: {},
+        svgo: {
+          removeViewBox: true
+        },
+        gifSicle: {
+          optimizationLevel: 3
+        }
       },
       options
     )

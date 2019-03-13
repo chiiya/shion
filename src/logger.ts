@@ -1,4 +1,5 @@
 const { Signale } = require('signale')
+import chalk from 'chalk'
 import * as Ora from 'ora'
 
 // Signale options
@@ -49,7 +50,9 @@ export default class Logger {
    * @param {string} message
    */
   error(message: string) {
-    this.console.error(message)
+    this.stop()
+    this.console.error(chalk.red(message))
+    process.exit(-1)
   }
 
   /**
