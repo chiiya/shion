@@ -89,3 +89,29 @@ export const formatSize = (bytes: number): string => {
   const i = Math.floor(Math.log(bytes) / Math.log(1024))
   return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + ' ' + sizes[i]
 }
+
+/**
+ * Get an input options that can be a string or an array of strings as
+ * an array.
+ */
+export const getStringInputAsArray = (data: string | string[]): string[] => {
+  if (Array.isArray(data)) {
+    data = [...data]
+  } else {
+    data = [data]
+  }
+  return data
+}
+
+/**
+ * Get an input options that can be a number or an array of numbers as
+ * an array.
+ */
+export const getNumberInputAsArray = (data: number | number[]): number[] => {
+  if (Array.isArray(data)) {
+    data = [...data]
+  } else {
+    data = [data]
+  }
+  return data
+}

@@ -18,6 +18,14 @@ export type OptimizeOptions = {
   gifSicle: any,
 }
 
+export type ResizeOptions = OptimizeOptions & {
+  /**
+   * Set the sizes (width) that you wish to generate.
+   * Can be a single size (e.g. 240) or multiple (e.g. [240, 480])
+   */
+  sizes: number | number[]
+}
+
 export type FileInformation = {
   path: string,
   size: string,
@@ -29,11 +37,19 @@ export type Input = {
   fullPath: string,
 }
 
-export type Result = {
+export type OptimizeResult = {
   path: string,
   originalSize: string,
   newSize: string,
   type: string,
+}
+
+export type ResizeResult = {
+  path: string,
+  originalSize: string,
+  newSize: string,
+  type: string,
+  size: number,
 }
 
 export type Output = {

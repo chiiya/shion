@@ -1,6 +1,6 @@
 import Logger from './logger'
-import { OptimizeOptions, Input, Result } from '../types/types'
-import { getFilesRecursive } from './helpers'
+import { OptimizeOptions, Input, OptimizeResult, ResizeOptions, ResizeResult } from '../types/types'
+import { getFilesRecursive, getStringInputAsArray } from './helpers'
 import { cpus } from 'os'
 import Table from 'cli-table'
 import chalk from 'chalk'
@@ -10,9 +10,11 @@ const { Sema } = require('async-sema')
 
 export default class Asebi {
   protected logger: Logger
+  protected processor: Processor
 
   constructor() {
     this.logger = new Logger()
+    this.processor = new Processor()
   }
 
   /**
@@ -29,7 +31,7 @@ export default class Asebi {
     this.logger.log('Executing image task.')
     this.logger.spin('Optimizing images...')
     const start: number = new Date().getTime()
-    let results: Result[] = []
+    let results: OptimizeResult[] = []
 
     try {
       results = await this.optimizeImages(input, output, options)
@@ -38,9 +40,27 @@ export default class Asebi {
     }
 
     this.logger.stop()
-    this.printResults(results)
+    this.printOptimizeResult(results)
     const time = new Date().getTime() - start
     this.logger.log(`Image task completed in ${time}ms. ${results.length} files processed.`)
+  }
+
+  public async resize(input: string[] | string, output: string, options: ResizeOptions) {
+    this.logger.log('Executing resize task.')
+    this.logger.spin('Resizing images...')
+    const start: number = new Date().getTime()
+    let results: ResizeResult[] = []
+
+    try {
+      results = await this.resizeImages(input, output, options)
+    } catch (error) {
+      this.logger.error(`${error.message}\n${error.stack}`)
+    }
+
+    this.logger.stop()
+    this.printResizeResult(results)
+    const time = new Date().getTime() - start
+    this.logger.log(`Resize task completed in ${time}ms. ${results.length} files processed.`)
   }
 
   /**
@@ -53,18 +73,73 @@ export default class Asebi {
     input: string[] | string,
     output: string,
     options?: OptimizeOptions
-  ): Promise<Result[]> {
+  ): Promise<OptimizeResult[]> {
     const configuration = this.getConfiguration(options)
-    let files: Input[] = []
-    let results: Result[] = []
+    let results: OptimizeResult[] = []
+    input = getStringInputAsArray(input)
+    const files = this.getFiles(input)
+    const s = new Sema(cpus().length, { capacity: files.length })
 
-    if (Array.isArray(input)) {
-      input = [...input]
-    } else {
-      input = [input]
-    }
+    // Optimize or copy images, depending on configuration
+    await Promise.all(
+      files.map(async (file: Input) => {
+        await s.acquire()
+        let result
+        const outputData = this.processor.getOutputData(file, output)
+        await ensureDir(output)
+        if (configuration.optimize === true) {
+          result = await this.processor.optimizeImage(file, outputData, configuration)
+        } else {
+          result = await this.processor.copyImage(file, outputData)
+        }
 
-    // Get a list of all files contained in the input directories
+        results = [...results, ...result]
+        s.release()
+      })
+    )
+
+    return results
+  }
+
+  protected async resizeImages(
+    input: string[] | string,
+    output: string,
+    options?: OptimizeOptions
+  ): Promise<ResizeResult[]> {
+    const configuration = Object.assign(
+      {
+        sizes: []
+      },
+      this.getConfiguration(options)
+    )
+    let results: ResizeResult[] = []
+    input = getStringInputAsArray(input)
+    const files = this.getFiles(input)
+    const s = new Sema(cpus().length, { capacity: files.length })
+
+    // Optimize and resize or copy and resize images, depending on configuration
+    await Promise.all(
+      files.map(async (file: Input) => {
+        await s.acquire()
+        const outputData = this.processor.getOutputData(file, output)
+        await ensureDir(output)
+        const result = await this.processor.optimizeAndResize(file, outputData, configuration)
+
+        results = [...results, ...result]
+        s.release()
+      })
+    )
+
+    return results
+  }
+
+  /**
+   * Get a list of all files contained in the input directories.
+   * @param input
+   */
+  protected getFiles(input: string[]): Input[] {
+    const files: Input[] = []
+
     input.map((dirname: string) => {
       try {
         const foundFiles = getFilesRecursive(dirname)
@@ -78,34 +153,14 @@ export default class Asebi {
       }
     })
 
-    const s = new Sema(cpus().length, { capacity: files.length })
-
-    // Optimize or copy images, depending on configuration
-    await Promise.all(
-      files.map(async (file: Input) => {
-        await s.acquire()
-        let result
-        const outputData = Processor.getOutputData(file, output)
-        await ensureDir(output)
-        if (configuration.optimize === true) {
-          result = await Processor.optimizeImage(file, outputData, configuration)
-        } else {
-          result = await Processor.copyImage(file, outputData)
-        }
-
-        results = [...results, ...result]
-        s.release()
-      })
-    )
-
-    return results
+    return files
   }
 
   /**
    * Print the results of the optimization task as a table.
    * @param results
    */
-  protected printResults(results: Result[]): void {
+  protected printOptimizeResult(results: OptimizeResult[]): void {
     const table = new Table({
       head: ['Image path', 'Type', 'Original Size', 'New Size'],
       style: {
@@ -118,6 +173,29 @@ export default class Asebi {
         image.type === 'WEBP' ? chalk.cyan(image.type) : image.type,
         chalk.magentaBright(image.originalSize),
         chalk.magentaBright(image.newSize)
+      ])
+    }
+    console.log(table.toString())
+  }
+
+  /**
+   * Print the results of the resize task as a table.
+   * @param results
+   */
+  protected printResizeResult(results: ResizeResult[]): void {
+    const table = new Table({
+      head: ['Image path', 'Type', 'Original Size', 'New Size', 'Width'],
+      style: {
+        head: ['cyan', 'bold']
+      }
+    })
+    for (const image of results) {
+      table.push([
+        image.path,
+        image.type === 'WEBP' ? chalk.cyan(image.type) : image.type,
+        chalk.magentaBright(image.originalSize),
+        chalk.magentaBright(image.newSize),
+        chalk.greenBright(`${image.size}`)
       ])
     }
     console.log(table.toString())
