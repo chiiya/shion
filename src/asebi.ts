@@ -1,10 +1,19 @@
 import Logger from './logger'
-import { OptimizeOptions, Input, OptimizeResult, ResizeOptions, ResizeResult } from '../types/types'
-import { getFilesRecursive, getStringInputAsArray } from './helpers'
+import {
+  OptimizeOptions,
+  Input,
+  OptimizeResult,
+  ResizeOptions,
+  ResizeResult,
+  ResizeTaskResult,
+  ResolvedResizeOptions
+} from '../types/types'
+import { getFilesRecursive, getStringInputAsArray, mergeDeep } from './helpers'
 import { cpus } from 'os'
 import Table from 'cli-table'
 import chalk from 'chalk'
 import Processor from './processor'
+import { extname, join } from 'path'
 const { ensureDir } = require('fs-extra')
 const { Sema } = require('async-sema')
 
@@ -49,18 +58,19 @@ export default class Asebi {
     this.logger.log('Executing resize task.')
     this.logger.spin('Resizing images...')
     const start: number = new Date().getTime()
-    let results: ResizeResult[] = []
+    let result: ResizeTaskResult = { warnings: [], files: [] }
 
     try {
-      results = await this.resizeImages(input, output, options)
+      result = await this.resizeImages(input, output, options)
     } catch (error) {
       this.logger.error(`${error.message}\n${error.stack}`)
     }
 
     this.logger.stop()
-    this.printResizeResult(results)
+    this.printWarnings(result.warnings)
+    this.printResizeResult(result.files)
     const time = new Date().getTime() - start
-    this.logger.log(`Resize task completed in ${time}ms. ${results.length} files processed.`)
+    this.logger.log(`Resize task completed in ${time}ms. ${result.files.length} files processed.`)
   }
 
   /**
@@ -74,7 +84,7 @@ export default class Asebi {
     output: string,
     options?: OptimizeOptions
   ): Promise<OptimizeResult[]> {
-    const configuration = this.getConfiguration(options)
+    const configuration = this.getOptimizeConfiguration(options)
     let results: OptimizeResult[] = []
     input = getStringInputAsArray(input)
     const files = this.getFiles(input)
@@ -86,7 +96,7 @@ export default class Asebi {
         await s.acquire()
         let result
         const outputData = this.processor.getOutputData(file, output)
-        await ensureDir(output)
+        await ensureDir(join(process.cwd(), outputData.dir))
         if (configuration.optimize === true) {
           result = await this.processor.optimizeImage(file, outputData, configuration)
         } else {
@@ -104,14 +114,10 @@ export default class Asebi {
   protected async resizeImages(
     input: string[] | string,
     output: string,
-    options?: OptimizeOptions
-  ): Promise<ResizeResult[]> {
-    const configuration = Object.assign(
-      {
-        sizes: []
-      },
-      this.getConfiguration(options)
-    )
+    options?: ResizeOptions
+  ): Promise<ResizeTaskResult> {
+    const configuration = this.getResizeConfiguration(options)
+    const warnings: string[] = []
     let results: ResizeResult[] = []
     input = getStringInputAsArray(input)
     const files = this.getFiles(input)
@@ -122,7 +128,14 @@ export default class Asebi {
       files.map(async (file: Input) => {
         await s.acquire()
         const outputData = this.processor.getOutputData(file, output)
-        await ensureDir(output)
+        const extension = extname(outputData.filename)
+          .substr(1)
+          .toUpperCase()
+        if (['JPEG', 'JPG', 'PNG', 'WEBP'].includes(extension) === false) {
+          warnings.push(`${file.path} could not be resized (only JPEG, PNG and WEBP allowed)`)
+          return
+        }
+        await ensureDir(join(process.cwd(), outputData.dir))
         const result = await this.processor.optimizeAndResize(file, outputData, configuration)
 
         results = [...results, ...result]
@@ -130,7 +143,7 @@ export default class Asebi {
       })
     )
 
-    return results
+    return { warnings, files: results }
   }
 
   /**
@@ -144,7 +157,8 @@ export default class Asebi {
       try {
         const foundFiles = getFilesRecursive(dirname)
         for (const file of foundFiles) {
-          files.push({ basedir: dirname, fullPath: file })
+          const path = file.substring(file.indexOf(dirname))
+          files.push({ basedir: dirname, fullPath: file, path })
         }
       } catch (error) {
         if (error.code === 'ENOENT') {
@@ -184,7 +198,7 @@ export default class Asebi {
    */
   protected printResizeResult(results: ResizeResult[]): void {
     const table = new Table({
-      head: ['Image path', 'Type', 'Original Size', 'New Size', 'Width'],
+      head: ['Image path', 'Type', 'Width'],
       style: {
         head: ['cyan', 'bold']
       }
@@ -193,8 +207,6 @@ export default class Asebi {
       table.push([
         image.path,
         image.type === 'WEBP' ? chalk.cyan(image.type) : image.type,
-        chalk.magentaBright(image.originalSize),
-        chalk.magentaBright(image.newSize),
         chalk.greenBright(`${image.size}`)
       ])
     }
@@ -202,11 +214,21 @@ export default class Asebi {
   }
 
   /**
-   * Get the resolved configuration options.
+   * Print generated warnings to console.
+   * @param warnings
+   */
+  protected printWarnings(warnings: string[]): void {
+    for (const warning of warnings) {
+      this.logger.warn(warning)
+    }
+  }
+
+  /**
+   * Get the resolved configuration options for the optimize task.
    * @param options
    */
-  protected getConfiguration(options?: OptimizeOptions): OptimizeOptions {
-    return Object.assign(
+  protected getOptimizeConfiguration(options?: OptimizeOptions): OptimizeOptions {
+    return mergeDeep(
       {
         optimize: true,
         webp: false,
@@ -220,6 +242,44 @@ export default class Asebi {
         gifSicle: {
           optimizationLevel: 3
         }
+      },
+      options
+    )
+  }
+
+  /**
+   * Get the resolved configuration options for the optimize task.
+   * @param options
+   */
+  protected getResizeConfiguration(options?: ResizeOptions): ResolvedResizeOptions {
+    let defaults = {
+      jpg: {
+        force: false
+      },
+      png: {
+        force: false
+      },
+      webp: {
+        force: false
+      }
+    }
+    if (options && options.optimize === true) {
+      defaults = mergeDeep(
+        {
+          jpg: {
+            quality: 75,
+            chromaSubsampling: '4:4:4'
+          }
+        },
+        defaults
+      )
+    }
+    return mergeDeep(
+      {
+        pattern: '[name].[extension]',
+        createWebpCopies: false,
+        optimize: false,
+        ...defaults
       },
       options
     )

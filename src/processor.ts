@@ -4,12 +4,14 @@ import {
   OptimizeOptions,
   OptimizeResult,
   ResizeOptions,
-  ResizeResult
+  ResizeResult,
+  ResolvedResizeOptions
 } from '../types/types'
 import { basename, join, extname } from 'path'
 import { buffer as imageminBuffer } from 'imagemin'
 import { formatSize, getFileInformation, getNumberInputAsArray } from './helpers'
-const { readFile, writeFile, copyFile } = require('fs-extra')
+import ReadableStream = NodeJS.ReadableStream
+const { readFile, createReadStream, createWriteStream, writeFile, copyFile } = require('fs-extra')
 const imageminPngquant = require('imagemin-pngquant')
 const imageminSvgo = require('imagemin-svgo')
 const imageminMozjpeg = require('imagemin-mozjpeg')
@@ -46,7 +48,7 @@ export default class Processor {
     output: Output,
     options: OptimizeOptions
   ): Promise<OptimizeResult[]> {
-    const buffer = await readFile(input.fullPath)
+    let buffer: Buffer = await readFile(input.fullPath)
     // Create optimized buffer
     const extension = extname(output.filename)
       .substr(1)
@@ -57,7 +59,7 @@ export default class Processor {
     // If new size is larger than origin, simply copy the original
     const newSize = optimizedBuffer.length
     if (originalSize < newSize) {
-      return await this.copyImage(input, output)
+      return this.copyImage(input, output)
     }
     await writeFile(output.fullPath, optimizedBuffer)
     const results: OptimizeResult[] = [
@@ -89,52 +91,60 @@ export default class Processor {
   public async optimizeAndResize(
     input: Input,
     output: Output,
-    options: ResizeOptions
+    options: ResolvedResizeOptions
   ): Promise<ResizeResult[]> {
     const results: ResizeResult[] = []
-    let buffer = await readFile(input.fullPath)
+
     const extension = extname(output.filename)
       .substr(1)
       .toUpperCase()
-    const originalSize = buffer.length
-
-    if (options.optimize === true) {
-      buffer = await this.optimize(buffer, options)
-    }
-
-    const newSize = buffer.length
     const sizes = getNumberInputAsArray(options.sizes)
 
     for (const size of sizes) {
-      buffer = sharp(buffer)
-        .resize({ width: size })
-        .toBuffer()
-      await writeFile(output.fullPath, buffer)
+      const resizer = sharp().resize(size)
+      if (options.optimize === true) {
+        resizer
+          .jpeg(options.jpg)
+          .png(options.png)
+          .webp(options.webp)
+      }
+
+      const filename = output.filename.replace(/\.[^/.]+$/, '')
+      const outputName = this.getResizedFilename(
+        filename,
+        extension.toLowerCase(),
+        size,
+        options.pattern
+      )
+      const path = join(process.cwd(), output.dir, outputName)
+      await this.resizeImage(input.fullPath, path, resizer)
       results.push({
-        path: join(output.dir, output.filename),
-        originalSize: formatSize(originalSize),
-        newSize: formatSize(newSize),
+        path: join(output.dir, outputName),
         type: extension,
         size
       })
-
-      // If webp images should be created, do it
-      if (options.webp === true && ['JPG', 'JPEG', 'PNG'].includes(extension)) {
-        const webpBuffer = await imageminBuffer(buffer, {
-          plugins: [imageminWebp()]
-        })
-        await writeFile(`${output.fullPath}.webp`, webpBuffer)
-        results.push({
-          path: join(output.dir, `${output.filename}.webp`),
-          originalSize: formatSize(originalSize),
-          newSize: formatSize(webpBuffer.length),
-          type: 'WEBP',
-          size
-        })
-      }
     }
 
     return results
+  }
+
+  protected async resizeImage(input: string, output: string, resizer: any): Promise<void> {
+    return new Promise<void>(resolve => {
+      const stream: ReadableStream = createReadStream(input)
+      stream.pipe(resizer).pipe(createWriteStream(output).on('finish', resolve))
+    })
+  }
+
+  protected getResizedFilename(
+    filename: string,
+    extension: string,
+    size: number,
+    pattern: string
+  ): string {
+    return pattern
+      .replace('[name]', filename)
+      .replace('[extension]', extension)
+      .replace('[size]', size.toString())
   }
 
   /**
@@ -161,7 +171,7 @@ export default class Processor {
    * @param options
    */
   protected async optimize(buffer: Buffer, options: OptimizeOptions): Promise<Buffer> {
-    return await imageminBuffer(buffer, {
+    return imageminBuffer(buffer, {
       plugins: [
         imageminMozjpeg(options.mozJpeg),
         imageminPngquant(options.pngQuant),

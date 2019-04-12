@@ -82,7 +82,7 @@ export const getFileInformation = (path: string): FileInformation => {
  * Format the byte size of a file into a nice human readable format.
  */
 export const formatSize = (bytes: number): string => {
-  if (bytes == 0) {
+  if (bytes === 0) {
     return '0 Bytes'
   }
   const sizes = ['Bytes', 'KB', 'MB', 'GB']
@@ -114,4 +114,35 @@ export const getNumberInputAsArray = (data: number | number[]): number[] => {
     data = [data]
   }
   return data
+}
+
+/**
+ * Check whether an item is an object.
+ * @param item
+ */
+export const isObject = (item: any) => {
+  return item && typeof item === 'object' && !Array.isArray(item)
+}
+
+/**
+ * Deep-merge to objects, since Object.assign only performs a shallow merge.
+ * @param target
+ * @param source
+ */
+export const mergeDeep = (target: any, source: any) => {
+  let output = Object.assign({}, target)
+  if (isObject(target) && isObject(source)) {
+    Object.keys(source).forEach(key => {
+      if (isObject(source[key])) {
+        if (!(key in target)) {
+          Object.assign(output, { [key]: source[key] })
+        } else {
+          output[key] = mergeDeep(target[key], source[key])
+        }
+      } else {
+        Object.assign(output, { [key]: source[key] })
+      }
+    })
+  }
+  return output
 }

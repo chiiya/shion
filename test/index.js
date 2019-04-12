@@ -1,3 +1,7 @@
 const { asebi } = require('../dist');
 
-asebi.images('images', 'public/images', { webp: true });
+(async () => {
+  await asebi.resize('images', 'dist/images', { sizes: [210, 420], pattern: '[name]_[size].[extension]' });
+  await asebi.images('dist/images', 'public/images');
+})();
+
