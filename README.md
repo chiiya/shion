@@ -2,6 +2,7 @@
 <p align="center"><strong>Easy image optimization for your custom build process.</strong></p>
 <p align="center">
   <a href="https://github.com/prettier/prettier"><img alt="styled with prettier" src="https://img.shields.io/badge/styled_with-prettier-ff69b4.svg"/></a>
+  <a href="https://codeclimate.com/github/chiiya/shion/maintainability"><img src="https://api.codeclimate.com/v1/badges/63590547bf0f138bae58/maintainability" /></a>
 </p>
 
 The goal of this project is to create a simple to use, opinionated API around image-min to optimize
