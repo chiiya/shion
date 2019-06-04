@@ -1,8 +1,8 @@
-# Asebi 🌺
+<p align="center"><img src="https://i.postimg.cc/5yRTL0Qc/shion.png" alt="Shion"></p>
+<p align="center"><strong>Easy image optimization for your custom build process.</strong></p>
 
 [![styled with prettier](https://img.shields.io/badge/styled_with-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
 
-**Easy image optimization for your custom build process.**  
 The goal of this project is to create a simple to use, opinionated API around image-min to optimize
 your image files, that can be called as a node script in your build process. See below for an example.
 
