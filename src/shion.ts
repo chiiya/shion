@@ -17,7 +17,7 @@ import { extname, join } from 'path'
 const { ensureDir } = require('fs-extra')
 const { Sema } = require('async-sema')
 
-export default class Asebi {
+export default class Shion {
   protected logger: Logger
   protected processor: Processor
 

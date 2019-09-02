@@ -1,4 +1,4 @@
-import DummyClass from '../src/asebi'
+import DummyClass from '../src/shion'
 
 /**
  * Dummy test

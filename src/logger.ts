@@ -9,10 +9,10 @@ const options = {
   stream: process.stdout,
   displayTimestamp: true,
   types: {
-    asebi: {
+    shion: {
       badge: '🌺',
       color: 'magentaBright',
-      label: 'asebi'
+      label: 'shion'
     }
   }
 }
@@ -37,12 +37,12 @@ export default class Logger {
   }
 
   /**
-   * Log a console message using the asebi style defined above.
+   * Log a console message using the shion style defined above.
    * @param {string} message
    */
   log(message: string) {
     // @ts-ignore
-    this.console.asebi(message)
+    this.console.shion(message)
   }
 
   /**
@@ -61,7 +61,7 @@ export default class Logger {
    */
   spin(message: string) {
     this.spinner.text = message
-    if (this.spinner.isSpinning === false) {
+    if (!this.spinner.isSpinning) {
       this.spinner.start()
     }
   }
@@ -71,7 +71,7 @@ export default class Logger {
    * @param {string} message
    */
   succeed(message: string) {
-    if (this.spinner.isSpinning === true) {
+    if (this.spinner.isSpinning) {
       this.spinner.succeed(message)
     }
   }
@@ -81,7 +81,7 @@ export default class Logger {
    * @param {string} message
    */
   fail(message: string) {
-    if (this.spinner.isSpinning === true) {
+    if (this.spinner.isSpinning) {
       this.spinner.fail(message)
     }
   }

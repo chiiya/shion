@@ -1,3 +1,3 @@
-import Asebi from './asebi'
+import Shion from './shion'
 
-export const asebi = new Asebi()
+export const shion = new Shion()
