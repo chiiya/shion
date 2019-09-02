@@ -1,5 +1,5 @@
 {
-  "name": "asebi",
+  "name": "shion",
   "version": "0.0.1",
   "description": "Easy image optimization for your custom build process",
   "keywords": [],
@@ -12,7 +12,7 @@
   "author": "Elisha Witte <elishawitte@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/chiiya/asebi"
+    "url": "https://github.com/chiiya/shion"
   },
   "license": "MIT",
   "engines": {
