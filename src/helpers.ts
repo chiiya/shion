@@ -1,5 +1,5 @@
 import { statSync, readdirSync } from 'fs'
-import { join, extname } from 'path'
+import { join, extname, resolve, normalize, isAbsolute } from 'path'
 import { FileInformation } from '../types/types'
 
 /**
@@ -122,6 +122,14 @@ export const getNumberInputAsArray = (data: number | number[]): number[] => {
  */
 export const isObject = (item: any) => {
   return item && typeof item === 'object' && !Array.isArray(item)
+}
+
+/**
+ * Check whether a given path is absolute or relative.
+ * @param path
+ */
+export const isAbsolutePath = (path: string) => {
+  return isAbsolute(path)
 }
 
 /**

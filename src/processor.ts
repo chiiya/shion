@@ -9,7 +9,7 @@ import {
 } from '../types/types'
 import { basename, join, extname } from 'path'
 import { buffer as imageminBuffer } from 'imagemin'
-import { formatSize, getFileInformation, getNumberInputAsArray } from './helpers'
+import { formatSize, getFileInformation, getNumberInputAsArray, isAbsolutePath } from './helpers'
 import ReadableStream = NodeJS.ReadableStream
 const { readFile, createReadStream, createWriteStream, writeFile, copyFile } = require('fs-extra')
 const imageminPngquant = require('imagemin-pngquant')
@@ -29,9 +29,9 @@ export default class Processor {
     const filename = basename(input.fullPath)
     const dir = join(basedir, input.fullPath.replace(input.basedir, '').replace(filename, ''))
     return {
-      fullPath: join(process.cwd(), dir, filename),
+      fullPath: isAbsolutePath(dir) ? join(dir, filename) : join(process.cwd(), dir, filename),
       basedir,
-      dir,
+      dir: isAbsolutePath(dir) ? dir : join(process.cwd(), dir),
       filename
     }
   }
@@ -116,7 +116,7 @@ export default class Processor {
         size,
         options.pattern
       )
-      const path = join(process.cwd(), output.dir, outputName)
+      const path = join(output.dir, outputName)
       await this.resizeImage(input.fullPath, path, resizer)
       results.push({
         path: join(output.dir, outputName),

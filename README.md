@@ -17,21 +17,21 @@ your image files, that can be called as a node script in your build process. See
 ### Usage
 
 ```bash
-npm install --dev asebi
+npm install --dev shion
 ```
 
 Then, import and use the library:
 
 ```javascript
-const { asebi } = require('asebi');
+const { shion } = require('shion');
 
 const config = {
   webp: true,
 }
 
 (async () => {
-  await asebi.resize('src/assets/images', 'dist/images', { sizes: [210, 420], pattern: '[name]_[size].[extension]' });
-  await asebi.images('dist/images', 'public/images', config);
+  await shion.resize('src/assets/images', 'dist/images', { sizes: [210, 420], pattern: '[name]_[size].[extension]' });
+  await shion.images('dist/images', 'public/images', config);
 })();
 ```
 

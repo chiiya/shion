@@ -13,9 +13,9 @@ import { cpus } from 'os'
 import Table from 'cli-table'
 import chalk from 'chalk'
 import Processor from './processor'
-import { extname, join } from 'path'
-const { ensureDir } = require('fs-extra')
-const { Sema } = require('async-sema')
+import { extname } from 'path'
+import { ensureDir } from 'fs-extra'
+import { Sema } from 'async-sema'
 
 export default class Shion {
   protected logger: Logger
@@ -96,7 +96,7 @@ export default class Shion {
         await s.acquire()
         let result
         const outputData = this.processor.getOutputData(file, output)
-        await ensureDir(join(process.cwd(), outputData.dir))
+        await ensureDir(outputData.dir)
         if (configuration.optimize === true) {
           result = await this.processor.optimizeImage(file, outputData, configuration)
         } else {
@@ -135,7 +135,7 @@ export default class Shion {
           warnings.push(`${file.path} could not be resized (only JPEG, PNG and WEBP allowed)`)
           return
         }
-        await ensureDir(join(process.cwd(), outputData.dir))
+        await ensureDir(outputData.dir)
         const result = await this.processor.optimizeAndResize(file, outputData, configuration)
 
         results = [...results, ...result]
