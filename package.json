@@ -110,7 +110,7 @@
     "tslint": "^5.19.0",
     "tslint-config-prettier": "^1.15.0",
     "tslint-config-standard": "^8.0.1",
-    "typescript": "^3.0.3"
+    "typescript": "^3.6.2"
   },
   "dependencies": {
     "async-sema": "^3.0.0",
