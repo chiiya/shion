@@ -123,7 +123,7 @@
     "imagemin-mozjpeg": "^8.0.0",
     "imagemin-pngquant": "^7.0.0",
     "imagemin-svgo": "^7.0.0",
-    "imagemin-webp": "^5.0.0",
+    "imagemin-webp": "^5.1.0",
     "ora": "^3.4.0",
     "sharp": "^0.22.0",
     "signale": "^1.4.0"
