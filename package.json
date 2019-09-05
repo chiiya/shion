@@ -113,7 +113,7 @@
     "typescript": "^3.6.2"
   },
   "dependencies": {
-    "async-sema": "^3.0.0",
+    "async-sema": "^3.0.1",
     "chalk": "^2.4.2",
     "cli-table": "^0.3.1",
     "fs-extra": "^8.1.0",
