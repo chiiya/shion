@@ -3,14 +3,13 @@ import {
   Input,
   OptimizeOptions,
   OptimizeResult,
-  ResizeOptions,
   ResizeResult,
   ResolvedResizeOptions
 } from '../types/types'
 import { basename, join, extname } from 'path'
 import { buffer as imageminBuffer } from 'imagemin'
 import { formatSize, getFileInformation, getNumberInputAsArray, isAbsolutePath } from './helpers'
-import ReadableStream = NodeJS.ReadableStream
+import { Stream } from 'readable-stream'
 const { readFile, createReadStream, createWriteStream, writeFile, copyFile } = require('fs-extra')
 const imageminPngquant = require('imagemin-pngquant')
 const imageminSvgo = require('imagemin-svgo')
@@ -130,7 +129,7 @@ export default class Processor {
 
   protected async resizeImage(input: string, output: string, resizer: any): Promise<void> {
     return new Promise<void>(resolve => {
-      const stream: ReadableStream = createReadStream(input)
+      const stream: Stream  = createReadStream(input)
       stream.pipe(resizer).pipe(createWriteStream(output).on('finish', resolve))
     })
   }

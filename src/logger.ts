@@ -1,5 +1,5 @@
 import { Signale } from 'signale'
-import chalk = require('chalk')
+import chalk from 'chalk';
 const Ora = require('ora')
 
 // Signale options
