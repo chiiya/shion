@@ -1,6 +1,6 @@
-const { Signale } = require('signale');
-const chalk = require('chalk');
-const Ora = require('ora');
+const { Signale } = require('signale')
+const chalk = require('chalk')
+const Ora = require('ora')
 
 // Signale options
 const options = {
@@ -12,9 +12,9 @@ const options = {
     shion: {
       badge: '🌺',
       color: 'magentaBright',
-      label: 'shion'
-    }
-  }
+      label: 'shion',
+    },
+  },
 }
 
 /**

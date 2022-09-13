@@ -4,15 +4,12 @@ import {
   OptimizeOptions,
   OptimizeResult,
   ResizeResult,
-  ResolvedResizeOptions
+  ResolvedResizeOptions,
 } from '../types/types'
-const { basename, join, extname } = require('path');
+const { basename, join, extname } = require('path')
 import { formatSize, getFileInformation, getNumberInputAsArray, isAbsolutePath } from './helpers'
 const { readFile, createReadStream, createWriteStream, writeFile, copyFile } = require('fs-extra')
 const imageminPngquant = require('imagemin-pngquant')
-const imageminSvgo = require('imagemin-svgo')
-const imageminMozjpeg = require('imagemin-mozjpeg')
-const imageminWebp = require('imagemin-webp')
 const imageminGifsicle = require('imagemin-gifsicle')
 const sharp = require('sharp')
 
@@ -29,7 +26,7 @@ export default class Processor {
       fullPath: isAbsolutePath(dir) ? join(dir, filename) : join(process.cwd(), dir, filename),
       basedir,
       dir: isAbsolutePath(dir) ? dir : join(process.cwd(), dir),
-      filename
+      filename,
     }
   }
 
@@ -47,9 +44,7 @@ export default class Processor {
   ): Promise<OptimizeResult[]> {
     let buffer: Buffer = await readFile(input.fullPath)
     // Create optimized buffer
-    const extension = extname(output.filename)
-      .substring(1)
-      .toUpperCase()
+    const extension = extname(output.filename).substring(1).toUpperCase()
     const originalSize = buffer.length
     const optimizedBuffer = await this.optimize(buffer, options)
 
@@ -64,23 +59,23 @@ export default class Processor {
         path: join(output.dir, output.filename),
         originalSize: formatSize(originalSize),
         newSize: formatSize(newSize),
-        type: extension
-      }
+        type: extension,
+      },
     ]
 
     // If webp images should be created, do it
     if (options.webp === true && ['JPG', 'JPEG', 'PNG'].includes(extension)) {
-      const imagemin = await import('imagemin');
-      // @ts-ignore
+      const { default: imagemin } = await import('imagemin')
+      const { default: imageminWebp } = await import('imagemin-webp')
       const webpBuffer = await imagemin.buffer(buffer, {
-        plugins: [imageminWebp()]
+        plugins: [imageminWebp()],
       })
       await writeFile(`${output.fullPath}.webp`, webpBuffer)
       results.push({
         path: join(output.dir, `${output.filename}.webp`),
         originalSize: formatSize(originalSize),
         newSize: formatSize(webpBuffer.length),
-        type: 'WEBP'
+        type: 'WEBP',
       })
     }
 
@@ -94,18 +89,13 @@ export default class Processor {
   ): Promise<ResizeResult[]> {
     const results: ResizeResult[] = []
 
-    const extension = extname(output.filename)
-      .substring(1)
-      .toUpperCase()
+    const extension = extname(output.filename).substring(1).toUpperCase()
     const sizes = getNumberInputAsArray(options.sizes)
 
     for (const size of sizes) {
       const resizer = sharp().resize(size)
       if (options.optimize) {
-        resizer
-          .jpeg(options.jpg)
-          .png(options.png)
-          .webp(options.webp)
+        resizer.jpeg(options.jpg).png(options.png).webp(options.webp)
       }
 
       const filename = output.filename.replace(/\.[^/.]+$/, '')
@@ -120,7 +110,7 @@ export default class Processor {
       results.push({
         path: join(output.dir, outputName),
         type: extension,
-        size
+        size,
       })
     }
 
@@ -128,7 +118,7 @@ export default class Processor {
   }
 
   protected async resizeImage(input: string, output: string, resizer: any): Promise<void> {
-    return new Promise<void>(resolve => {
+    return new Promise<void>((resolve) => {
       const stream = createReadStream(input)
       stream.pipe(resizer).pipe(createWriteStream(output).on('finish', resolve))
     })
@@ -159,8 +149,8 @@ export default class Processor {
         path: join(output.dir, output.filename),
         originalSize: information.size,
         newSize: information.size,
-        type: information.type
-      }
+        type: information.type,
+      },
     ]
   }
 
@@ -170,15 +160,16 @@ export default class Processor {
    * @param options
    */
   protected async optimize(buffer: Buffer, options: OptimizeOptions): Promise<Buffer> {
-    const imagemin = await import('imagemin');
-    // @ts-ignore
+    const { default: imagemin } = await import('imagemin')
+    const { default: imageminSvgo } = await import('imagemin-svgo')
+    const { default: imageminMozjpeg } = await import('imagemin-mozjpeg')
     return imagemin.buffer(buffer, {
       plugins: [
         imageminMozjpeg(options.mozJpeg),
         imageminPngquant(options.pngQuant),
         imageminSvgo(options.svgo),
-        imageminGifsicle(options.gifSicle)
-      ]
+        imageminGifsicle(options.gifSicle),
+      ],
     })
   }
 }

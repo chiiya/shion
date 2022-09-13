@@ -1,5 +1,5 @@
-const { statSync, readdirSync } = require('fs');
-const { join, extname, isAbsolute } = require('path');
+const { statSync, readdirSync } = require('fs')
+const { join, extname, isAbsolute } = require('path')
 import type { FileInformation } from '../types/types.js'
 
 /**
@@ -22,10 +22,8 @@ export const isFile = (source: string): boolean => statSync(source).isFile()
  * @param source
  */
 const isImage = (source: string): boolean => {
-  const extension = extname(source)
-    .substring(1)
-    .toUpperCase()
-  return ['JPG', 'PNG', 'GIF', 'JPEG', 'SVG'].includes(extension)
+  const extension = extname(source).substring(1).toUpperCase()
+  return ['JPG', 'PNG', 'GIF', 'JPEG', 'SVG', 'WEBP'].includes(extension)
 }
 
 /**
@@ -58,7 +56,7 @@ export const getFiles = (source: string): string[] => {
  */
 export const getFilesRecursive = (source: string): string[] => {
   const dirs = getDirectories(source)
-  const files = dirs.map(dir => getFilesRecursive(dir)).reduce((a, b) => a.concat(b), [])
+  const files = dirs.map((dir) => getFilesRecursive(dir)).reduce((a, b) => a.concat(b), [])
   return files.concat(getFiles(source))
 }
 
@@ -72,9 +70,7 @@ export const getFileInformation = (path: string): FileInformation => {
   return {
     path,
     size: formatSize(stats.size),
-    type: extname(path)
-      .substring(1)
-      .toUpperCase()
+    type: extname(path).substring(1).toUpperCase(),
   }
 }
 
@@ -140,7 +136,7 @@ export const isAbsolutePath = (path: string) => {
 export const mergeDeep = (target: any, source: any) => {
   let output = Object.assign({}, target)
   if (isObject(target) && isObject(source)) {
-    Object.keys(source).forEach(key => {
+    Object.keys(source).forEach((key) => {
       if (isObject(source[key])) {
         if (!(key in target)) {
           Object.assign(output, { [key]: source[key] })
