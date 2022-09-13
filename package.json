@@ -1,6 +1,6 @@
 {
   "name": "shion",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Easy image optimization for your custom build process",
   "keywords": [],
   "main": "dist/index.js",
