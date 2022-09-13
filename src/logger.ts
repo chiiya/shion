@@ -1,6 +1,6 @@
-import { Signale } from 'signale'
-import chalk from 'chalk';
-const Ora = require('ora')
+const { Signale } = require('signale');
+const chalk = require('chalk');
+const Ora = require('ora');
 
 // Signale options
 const options = {

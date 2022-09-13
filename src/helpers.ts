@@ -1,6 +1,6 @@
-import { statSync, readdirSync } from 'fs'
-import { join, extname, isAbsolute } from 'path'
-import { FileInformation } from '../types/types'
+const { statSync, readdirSync } = require('fs');
+const { join, extname, isAbsolute } = require('path');
+import type { FileInformation } from '../types/types.js'
 
 /**
  * Check whether a given file location is a directory.

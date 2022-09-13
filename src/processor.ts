@@ -6,10 +6,8 @@ import {
   ResizeResult,
   ResolvedResizeOptions
 } from '../types/types'
-import { basename, join, extname } from 'path'
-import imagemin from 'imagemin'
+const { basename, join, extname } = require('path');
 import { formatSize, getFileInformation, getNumberInputAsArray, isAbsolutePath } from './helpers'
-import { Stream } from 'readable-stream'
 const { readFile, createReadStream, createWriteStream, writeFile, copyFile } = require('fs-extra')
 const imageminPngquant = require('imagemin-pngquant')
 const imageminSvgo = require('imagemin-svgo')
@@ -72,6 +70,8 @@ export default class Processor {
 
     // If webp images should be created, do it
     if (options.webp === true && ['JPG', 'JPEG', 'PNG'].includes(extension)) {
+      const imagemin = await import('imagemin');
+      // @ts-ignore
       const webpBuffer = await imagemin.buffer(buffer, {
         plugins: [imageminWebp()]
       })
@@ -129,7 +129,7 @@ export default class Processor {
 
   protected async resizeImage(input: string, output: string, resizer: any): Promise<void> {
     return new Promise<void>(resolve => {
-      const stream: Stream  = createReadStream(input)
+      const stream = createReadStream(input)
       stream.pipe(resizer).pipe(createWriteStream(output).on('finish', resolve))
     })
   }
@@ -170,6 +170,8 @@ export default class Processor {
    * @param options
    */
   protected async optimize(buffer: Buffer, options: OptimizeOptions): Promise<Buffer> {
+    const imagemin = await import('imagemin');
+    // @ts-ignore
     return imagemin.buffer(buffer, {
       plugins: [
         imageminMozjpeg(options.mozJpeg),

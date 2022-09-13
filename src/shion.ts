@@ -6,16 +6,16 @@ import {
   ResizeOptions,
   ResizeResult,
   ResizeTaskResult,
-  ResolvedResizeOptions
+  ResolvedResizeOptions,
 } from '../types/types'
 import { getFilesRecursive, getStringInputAsArray, mergeDeep } from './helpers'
-import { cpus } from 'os'
-import Table from 'cli-table'
-import chalk from 'chalk'
+const { cpus } = require('os')
+const Table = require('cli-table')
+const chalk = require('chalk')
 import Processor from './processor'
-import { extname } from 'path'
-import { ensureDir } from 'fs-extra'
-import { Sema } from 'async-sema'
+const { extname } = require('path')
+const { ensureDir } = require('fs-extra')
+const { Sema } = require('async-sema')
 
 export default class Shion {
   protected logger: Logger
@@ -128,9 +128,7 @@ export default class Shion {
       files.map(async (file: Input) => {
         await s.acquire()
         const outputData = this.processor.getOutputData(file, output)
-        const extension = extname(outputData.filename)
-          .substring(1)
-          .toUpperCase()
+        const extension = extname(outputData.filename).substring(1).toUpperCase()
         if (!['JPEG', 'JPG', 'PNG', 'WEBP'].includes(extension)) {
           warnings.push(`${file.path} could not be resized (only JPEG, PNG and WEBP allowed)`)
           return
@@ -178,15 +176,15 @@ export default class Shion {
     const table = new Table({
       head: ['Image path', 'Type', 'Original Size', 'New Size'],
       style: {
-        head: ['cyan', 'bold']
-      }
+        head: ['cyan', 'bold'],
+      },
     })
     for (const image of results) {
       table.push([
         image.path,
         image.type === 'WEBP' ? chalk.cyan(image.type) : image.type,
         chalk.magentaBright(image.originalSize),
-        chalk.magentaBright(image.newSize)
+        chalk.magentaBright(image.newSize),
       ])
     }
     console.log(table.toString())
@@ -200,14 +198,14 @@ export default class Shion {
     const table = new Table({
       head: ['Image path', 'Type', 'Width'],
       style: {
-        head: ['cyan', 'bold']
-      }
+        head: ['cyan', 'bold'],
+      },
     })
     for (const image of results) {
       table.push([
         image.path,
         image.type === 'WEBP' ? chalk.cyan(image.type) : image.type,
-        chalk.greenBright(`${image.size}`)
+        chalk.greenBright(`${image.size}`),
       ])
     }
     console.log(table.toString())
@@ -233,15 +231,15 @@ export default class Shion {
         optimize: true,
         webp: false,
         mozJpeg: {
-          quality: 80
+          quality: 80,
         },
         pngQuant: {},
         svgo: {
-          removeViewBox: true
+          removeViewBox: true,
         },
         gifSicle: {
-          optimizationLevel: 3
-        }
+          optimizationLevel: 3,
+        },
       },
       options
     )
@@ -254,22 +252,22 @@ export default class Shion {
   protected getResizeConfiguration(options?: ResizeOptions): ResolvedResizeOptions {
     let defaults = {
       jpg: {
-        force: false
+        force: false,
       },
       png: {
-        force: false
+        force: false,
       },
       webp: {
-        force: false
-      }
+        force: false,
+      },
     }
     if (options && options.optimize === true) {
       defaults = mergeDeep(
         {
           jpg: {
             quality: 75,
-            chromaSubsampling: '4:4:4'
-          }
+            chromaSubsampling: '4:4:4',
+          },
         },
         defaults
       )
@@ -279,7 +277,7 @@ export default class Shion {
         pattern: '[name].[extension]',
         createWebpCopies: false,
         optimize: false,
-        ...defaults
+        ...defaults,
       },
       options
     )
