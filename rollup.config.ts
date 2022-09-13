@@ -15,8 +15,7 @@ export default {
   ],
   external: [
     ...Object.keys(pkg.dependencies || {}),
-    ...Object.keys(pkg.peerDependencies || {}),
-    'os', 'fs', 'path',
+    'os', 'fs', 'path', 'is-svg', 'execa'
   ],
 plugins: [
     typescript({

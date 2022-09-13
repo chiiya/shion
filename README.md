@@ -5,7 +5,7 @@
   <a href="https://codeclimate.com/github/chiiya/shion/maintainability"><img src="https://api.codeclimate.com/v1/badges/63590547bf0f138bae58/maintainability" /></a>
 </p>
 
-The goal of this project is to create a simple to use, opinionated API around image-min to optimize
+The goal of this project is to create a simple-to-use, opinionated API around image-min to optimize
 your image files, that can be called as a node script in your build process. See below for an example.
 
 #### Features

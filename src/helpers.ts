@@ -1,5 +1,5 @@
 import { statSync, readdirSync } from 'fs'
-import { join, extname, resolve, normalize, isAbsolute } from 'path'
+import { join, extname, isAbsolute } from 'path'
 import { FileInformation } from '../types/types'
 
 /**
@@ -23,7 +23,7 @@ export const isFile = (source: string): boolean => statSync(source).isFile()
  */
 const isImage = (source: string): boolean => {
   const extension = extname(source)
-    .substr(1)
+    .substring(1)
     .toUpperCase()
   return ['JPG', 'PNG', 'GIF', 'JPEG', 'SVG'].includes(extension)
 }
@@ -73,13 +73,13 @@ export const getFileInformation = (path: string): FileInformation => {
     path,
     size: formatSize(stats.size),
     type: extname(path)
-      .substr(1)
+      .substring(1)
       .toUpperCase()
   }
 }
 
 /**
- * Format the byte size of a file into a nice human readable format.
+ * Format the byte size of a file into a nice human-readable format.
  */
 export const formatSize = (bytes: number): string => {
   if (bytes === 0) {
@@ -133,7 +133,7 @@ export const isAbsolutePath = (path: string) => {
 }
 
 /**
- * Deep-merge to objects, since Object.assign only performs a shallow merge.
+ * Deep-merge to objects, since `Object.assign` only performs a shallow merge.
  * @param target
  * @param source
  */

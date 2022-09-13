@@ -7,7 +7,7 @@ import {
   ResolvedResizeOptions
 } from '../types/types'
 import { basename, join, extname } from 'path'
-import { buffer as imageminBuffer } from 'imagemin'
+import imagemin from 'imagemin'
 import { formatSize, getFileInformation, getNumberInputAsArray, isAbsolutePath } from './helpers'
 import { Stream } from 'readable-stream'
 const { readFile, createReadStream, createWriteStream, writeFile, copyFile } = require('fs-extra')
@@ -50,7 +50,7 @@ export default class Processor {
     let buffer: Buffer = await readFile(input.fullPath)
     // Create optimized buffer
     const extension = extname(output.filename)
-      .substr(1)
+      .substring(1)
       .toUpperCase()
     const originalSize = buffer.length
     const optimizedBuffer = await this.optimize(buffer, options)
@@ -72,7 +72,7 @@ export default class Processor {
 
     // If webp images should be created, do it
     if (options.webp === true && ['JPG', 'JPEG', 'PNG'].includes(extension)) {
-      const webpBuffer = await imageminBuffer(buffer, {
+      const webpBuffer = await imagemin.buffer(buffer, {
         plugins: [imageminWebp()]
       })
       await writeFile(`${output.fullPath}.webp`, webpBuffer)
@@ -95,13 +95,13 @@ export default class Processor {
     const results: ResizeResult[] = []
 
     const extension = extname(output.filename)
-      .substr(1)
+      .substring(1)
       .toUpperCase()
     const sizes = getNumberInputAsArray(options.sizes)
 
     for (const size of sizes) {
       const resizer = sharp().resize(size)
-      if (options.optimize === true) {
+      if (options.optimize) {
         resizer
           .jpeg(options.jpg)
           .png(options.png)
@@ -170,7 +170,7 @@ export default class Processor {
    * @param options
    */
   protected async optimize(buffer: Buffer, options: OptimizeOptions): Promise<Buffer> {
-    return imageminBuffer(buffer, {
+    return imagemin.buffer(buffer, {
       plugins: [
         imageminMozjpeg(options.mozJpeg),
         imageminPngquant(options.pngQuant),

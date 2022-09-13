@@ -44,7 +44,7 @@ export default class Shion {
 
     try {
       results = await this.optimizeImages(input, output, options)
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`${error.message}\n${error.stack}`)
     }
 
@@ -62,7 +62,7 @@ export default class Shion {
 
     try {
       result = await this.resizeImages(input, output, options)
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`${error.message}\n${error.stack}`)
     }
 
@@ -129,9 +129,9 @@ export default class Shion {
         await s.acquire()
         const outputData = this.processor.getOutputData(file, output)
         const extension = extname(outputData.filename)
-          .substr(1)
+          .substring(1)
           .toUpperCase()
-        if (['JPEG', 'JPG', 'PNG', 'WEBP'].includes(extension) === false) {
+        if (!['JPEG', 'JPG', 'PNG', 'WEBP'].includes(extension)) {
           warnings.push(`${file.path} could not be resized (only JPEG, PNG and WEBP allowed)`)
           return
         }
@@ -160,7 +160,7 @@ export default class Shion {
           const path = file.substring(file.indexOf(dirname))
           files.push({ basedir: dirname, fullPath: file, path })
         }
-      } catch (error) {
+      } catch (error: any) {
         if (error.code === 'ENOENT') {
           this.logger.error(`File or directory not found.\n${error.message}`)
         } else throw error
