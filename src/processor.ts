@@ -2,7 +2,7 @@ import type { Output, Input, ResizeResult, ResolvedResizeOptions } from '../type
 import { basename, join, extname, dirname } from 'path';
 import { getNumberInputAsArray, isAbsolutePath } from './helpers';
 import { readFile, writeFile, mkdir } from 'fs/promises';
-const sharp = require('sharp');
+import sharp from 'sharp';
 
 export default class Processor {
   /**
