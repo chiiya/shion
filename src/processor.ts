@@ -1,7 +1,7 @@
 import type { Output, Input, ResizeResult, ResolvedResizeOptions } from '../types/types';
-import { basename, join, extname } from 'path';
+import { basename, join, extname, dirname } from 'path';
 import { getNumberInputAsArray, isAbsolutePath } from './helpers';
-import { createReadStream, createWriteStream } from 'fs-extra';
+import { readFile, writeFile, mkdir } from 'fs/promises';
 const sharp = require('sharp');
 
 export default class Processor {
@@ -32,7 +32,6 @@ export default class Processor {
     const sizes = getNumberInputAsArray(options.sizes);
 
     for (const size of sizes) {
-      const resizer = sharp().resize(size);
       const filename = output.filename.replace(/\.[^/.]+$/, '');
       const outputName = this.getResizedFilename(
         filename,
@@ -41,7 +40,7 @@ export default class Processor {
         options.pattern
       );
       const path = join(output.dir, outputName);
-      await this.resizeImage(input.fullPath, path, resizer);
+      await this.resizeImage(input.fullPath, path, size);
       results.push({
         path: join(output.dir, outputName),
         type: extension,
@@ -52,11 +51,12 @@ export default class Processor {
     return results;
   }
 
-  protected async resizeImage(input: string, output: string, resizer: any): Promise<void> {
-    return new Promise<void>((resolve) => {
-      const stream = createReadStream(input);
-      stream.pipe(resizer).pipe(createWriteStream(output).on('finish', resolve));
-    });
+  protected async resizeImage(input: string, output: string, size: number): Promise<void> {
+    const buffer = await readFile(input);
+    await mkdir(dirname(output), { recursive: true });
+    // Process the image with Sharp and write the output
+    const outputBuffer = await sharp(buffer).resize(size).toBuffer();
+    await writeFile(output, outputBuffer);
   }
 
   protected getResizedFilename(
