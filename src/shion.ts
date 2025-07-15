@@ -1,20 +1,18 @@
 import Logger from './logger'
-import {
-  OptimizeOptions,
+import type {
   Input,
-  OptimizeResult,
   ResizeOptions,
   ResizeResult,
   ResizeTaskResult,
   ResolvedResizeOptions,
 } from '../types/types'
 import { getFilesRecursive, getStringInputAsArray, mergeDeep } from './helpers'
-const { cpus } = require('os')
+import { cpus } from 'os'
 const Table = require('cli-table')
-const chalk = require('chalk')
+import chalk from 'chalk'
 import Processor from './processor'
-const { extname } = require('path')
-const { ensureDir } = require('fs-extra')
+import { extname } from 'path'
+import { ensureDir } from 'fs-extra'
 const { Sema } = require('async-sema')
 
 export default class Shion {
@@ -24,34 +22,6 @@ export default class Shion {
   constructor() {
     this.logger = new Logger()
     this.processor = new Processor()
-  }
-
-  /**
-   * Optimize all images from a given input folder (or multiple input folders)
-   * and copy them to a given output folder. Can also create webp versions of jpg
-   * and png images by specifying the `webp: true` flag in the options parameter.
-   *
-   * @param {string|string[]} input
-   * @param {string} output
-   * @param {object} options
-   * @param {boolean} options.webp
-   */
-  public async images(input: string[] | string, output: string, options?: OptimizeOptions) {
-    this.logger.log('Executing image task.')
-    this.logger.spin('Optimizing images...')
-    const start: number = new Date().getTime()
-    let results: OptimizeResult[] = []
-
-    try {
-      results = await this.optimizeImages(input, output, options)
-    } catch (error: any) {
-      this.logger.error(`${error.message}\n${error.stack}`)
-    }
-
-    this.logger.stop()
-    this.printOptimizeResult(results)
-    const time = new Date().getTime() - start
-    this.logger.log(`Image task completed in ${time}ms. ${results.length} files processed.`)
   }
 
   public async resize(input: string[] | string, output: string, options: ResizeOptions) {
@@ -71,44 +41,6 @@ export default class Shion {
     this.printResizeResult(result.files)
     const time = new Date().getTime() - start
     this.logger.log(`Resize task completed in ${time}ms. ${result.files.length} files processed.`)
-  }
-
-  /**
-   * Optimize images.
-   * @param input
-   * @param output
-   * @param options
-   */
-  protected async optimizeImages(
-    input: string[] | string,
-    output: string,
-    options?: OptimizeOptions
-  ): Promise<OptimizeResult[]> {
-    const configuration = this.getOptimizeConfiguration(options)
-    let results: OptimizeResult[] = []
-    input = getStringInputAsArray(input)
-    const files = this.getFiles(input)
-    const s = new Sema(cpus().length, { capacity: files.length })
-
-    // Optimize or copy images, depending on configuration
-    await Promise.all(
-      files.map(async (file: Input) => {
-        await s.acquire()
-        let result
-        const outputData = this.processor.getOutputData(file, output)
-        await ensureDir(outputData.dir)
-        if (configuration.optimize === true) {
-          result = await this.processor.optimizeImage(file, outputData, configuration)
-        } else {
-          result = await this.processor.copyImage(file, outputData)
-        }
-
-        results = [...results, ...result]
-        s.release()
-      })
-    )
-
-    return results
   }
 
   protected async resizeImages(
@@ -169,28 +101,6 @@ export default class Shion {
   }
 
   /**
-   * Print the results of the optimization task as a table.
-   * @param results
-   */
-  protected printOptimizeResult(results: OptimizeResult[]): void {
-    const table = new Table({
-      head: ['Image path', 'Type', 'Original Size', 'New Size'],
-      style: {
-        head: ['cyan', 'bold'],
-      },
-    })
-    for (const image of results) {
-      table.push([
-        image.path,
-        image.type === 'WEBP' ? chalk.cyan(image.type) : image.type,
-        chalk.magentaBright(image.originalSize),
-        chalk.magentaBright(image.newSize),
-      ])
-    }
-    console.log(table.toString())
-  }
-
-  /**
    * Print the results of the resize task as a table.
    * @param results
    */
@@ -219,30 +129,6 @@ export default class Shion {
     for (const warning of warnings) {
       this.logger.warn(warning)
     }
-  }
-
-  /**
-   * Get the resolved configuration options for the optimize task.
-   * @param options
-   */
-  protected getOptimizeConfiguration(options?: OptimizeOptions): OptimizeOptions {
-    return mergeDeep(
-      {
-        optimize: true,
-        webp: false,
-        mozJpeg: {
-          quality: 80,
-        },
-        pngQuant: {},
-        svgo: {
-          removeViewBox: true,
-        },
-        gifSicle: {
-          optimizationLevel: 3,
-        },
-      },
-      options
-    )
   }
 
   /**

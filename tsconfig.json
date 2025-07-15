@@ -1,23 +1,23 @@
 {
+  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    "esModuleInterop": true,
-    "isolatedModules": false,
-    "allowSyntheticDefaultImports": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
     "strict": true,
-    "noImplicitAny": true,
-    "target": "ES2019",
-    "moduleResolution": "node",
-    "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "lib": ["esnext"],
+    "isolatedModules": true,
+    "target": "ESNext",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowSyntheticDefaultImports": true,
     "declaration": true,
-    "resolveJsonModule": true,
-    "outDir": "dist/lib",
-    "module": "ESNext"
+    "declarationMap": true,
+    "skipLibCheck": true,
+    "verbatimModuleSyntax": true,
+    "lib": ["esnext", "dom", "dom.iterable"],
+    "removeComments": true,
+    "outDir": "./dist"
   },
-  "include": [
-    "src", "types/types.d.ts"
-  ],
+  "include": ["./src", "./types"],
   "exclude": ["node_modules"]
 }

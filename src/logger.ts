@@ -1,6 +1,6 @@
 const { Signale } = require('signale')
-const chalk = require('chalk')
-const Ora = require('ora')
+import chalk from 'chalk'
+import Ora from 'ora'
 
 // Signale options
 const options = {
@@ -63,26 +63,6 @@ export default class Logger {
     this.spinner.text = message
     if (!this.spinner.isSpinning) {
       this.spinner.start()
-    }
-  }
-
-  /**
-   * Stop the spinner, set it to green, and persist it.
-   * @param {string} message
-   */
-  succeed(message: string) {
-    if (this.spinner.isSpinning) {
-      this.spinner.succeed(message)
-    }
-  }
-
-  /**
-   * Stop the spinner, set it to red, and persist it.
-   * @param {string} message
-   */
-  fail(message: string) {
-    if (this.spinner.isSpinning) {
-      this.spinner.fail(message)
     }
   }
 
