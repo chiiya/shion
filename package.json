@@ -3,8 +3,14 @@
   "version": "0.4.1",
   "description": "Easy image optimization for your custom build process",
   "keywords": [],
+  "type": "module",
   "main": "dist/index.js",
-  "module": "dist/index.esm.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "typings": "dist/index.d.ts",
   "files": [
     "dist"

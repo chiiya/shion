@@ -2,27 +2,22 @@ import { nodeResolve } from '@rollup/plugin-node-resolve';
 import pkg from './package.json' with { type: 'json' };
 import commonjs from '@rollup/plugin-commonjs';
 import typescript from '@rollup/plugin-typescript';
-
-const extensions = ['.js', '.jsx', '.ts', '.tsx'];
+import { builtinModules } from 'module';
 
 export default {
   input: 'src/index.ts',
   output: [
     {
-      file: pkg.main,
-      format: 'cjs',
-      inlineDynamicImports: true,
-    },
-    {
-      file: pkg.module,
+      dir: 'dist',
       format: 'esm',
-      inlineDynamicImports: true,
+      sourcemap: true,
+      entryFileNames: '[name].js',
     },
   ],
-  external: [...Object.keys(pkg.dependencies || {}), 'os', 'fs', 'path'],
+  external: [...builtinModules, ...Object.keys(pkg.dependencies || {})],
   plugins: [
-    nodeResolve({ extensions }),
+    nodeResolve({ preferBuiltins: true }),
     commonjs(),
     typescript({ tsconfig: './tsconfig.json' }),
   ],
-}
+};
