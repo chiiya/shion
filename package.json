@@ -22,10 +22,6 @@
     "prebuild": "rimraf dist",
     "build": "rollup -c rollup.config.mjs"
   },
-  "prettier": {
-    "semi": false,
-    "singleQuote": true
-  },
   "devDependencies": {
     "@eslint/js": "^9.31.0",
     "@rollup/plugin-commonjs": "^28.0.6",
@@ -44,12 +40,12 @@
     "typescript-eslint": "^8.37.0"
   },
   "dependencies": {
-    "async-sema": "^3.1.1",
     "chalk": "^5.4.1",
-    "cli-table": "^0.3.11",
+    "cli-table3": "^0.6.5",
+    "consola": "^3.4.2",
     "fs-extra": "^11.3.0",
     "ora": "^8.2.0",
-    "sharp": "^0.34.3",
-    "signale": "^1.4.0"
+    "p-limit": "^6.2.0",
+    "sharp": "^0.34.3"
   }
 }
